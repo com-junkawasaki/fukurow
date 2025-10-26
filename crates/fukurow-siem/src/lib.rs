@@ -216,3 +216,101 @@ impl Default for SiemManager {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod client_tests {
+    use super::*;
+    use async_trait::async_trait;
+
+    // Mock SIEM client for testing
+    struct MockSiemClient {
+        name: String,
+    }
+
+    #[async_trait]
+    impl SiemClient for MockSiemClient {
+        async fn send_event(&self, event: SiemEvent) -> SiemResult<()> {
+            println!("Mock client {} received event: {}", self.name, event.message);
+            Ok(())
+        }
+
+        async fn send_events(&self, events: Vec<SiemEvent>) -> SiemResult<()> {
+            println!("Mock client {} received {} events", self.name, events.len());
+            Ok(())
+        }
+
+        async fn query_events(&self, _query: &str, _limit: Option<usize>) -> SiemResult<Vec<SiemEvent>> {
+            Ok(vec![])
+        }
+
+        async fn health_check(&self) -> SiemResult<bool> {
+            Ok(true)
+        }
+    }
+
+    impl MockSiemClient {
+        fn new(name: &str) -> Self {
+            Self {
+                name: name.to_string(),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod siem_config_tests {
+        use super::*;
+
+        #[test]
+        fn test_siem_config_creation() {
+            let config = SiemConfig::new("https://api.example.com")
+                .with_api_key("test_key")
+                .with_credentials("user", "pass")
+                .with_timeout(120);
+
+            assert_eq!(config.endpoint, "https://api.example.com");
+            assert_eq!(config.api_key, Some("test_key".to_string()));
+            assert_eq!(config.username, Some("user".to_string()));
+            assert_eq!(config.password, Some("pass".to_string()));
+            assert_eq!(config.timeout_seconds, 120);
+        }
+    }
+
+    #[cfg(test)]
+    mod siem_manager_integration_tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_siem_manager_broadcast_to_single_client() {
+            let manager = SiemManager::new().add_client(MockSiemClient::new("single_client"));
+
+            let event = SiemEvent::new("test", "integration_test", "Broadcast test message");
+
+            let result = manager.broadcast_event(event).await;
+            assert!(result.is_ok());
+        }
+
+        #[tokio::test]
+        async fn test_siem_manager_broadcast_events_batch() {
+            let manager = SiemManager::new().add_client(MockSiemClient::new("batch_client"));
+
+            let events = vec![
+                SiemEvent::new("event1", "batch_test", "Message 1"),
+                SiemEvent::new("event2", "batch_test", "Message 2"),
+                SiemEvent::new("event3", "batch_test", "Message 3"),
+            ];
+
+            let result = manager.broadcast_events(events).await;
+            assert!(result.is_ok());
+        }
+
+        #[tokio::test]
+        async fn test_siem_manager_empty_no_panic() {
+            let manager = SiemManager::new();
+            let event = SiemEvent::new("empty_test", "source", "Empty manager test");
+
+            // Broadcasting to empty manager should succeed (no clients to fail)
+            let result = manager.broadcast_event(event).await;
+            assert!(result.is_ok());
+        }
+    }
+}
