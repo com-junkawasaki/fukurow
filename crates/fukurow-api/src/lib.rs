@@ -279,13 +279,120 @@ mod tests {
     }
 
     #[cfg(test)]
-    mod routes_tests {
+    mod handlers_routes_tests {
         use super::*;
 
+        // Test handler functions that don't require complex state
         #[test]
-        fn test_create_docs_router() {
-            let router = create_docs_router();
-            assert!(true); // Docs router creation should not panic
+        fn test_api_response_creation() {
+            let data = "test_data".to_string();
+            let response = ApiResponse::success(data.clone());
+
+            assert!(response.success);
+            assert_eq!(response.data, Some(data));
+            assert!(response.error.is_none());
+            assert!(response.timestamp > 0);
+        }
+
+        #[test]
+        fn test_api_error_response_creation() {
+            let error_msg = "test error".to_string();
+            let response = ApiResponse::<String>::error(error_msg.clone());
+
+            assert!(!response.success);
+            assert!(response.data.is_none());
+            assert_eq!(response.error, Some(error_msg));
+            assert!(response.timestamp > 0);
+        }
+
+        #[test]
+        fn test_health_response_creation() {
+            let response = HealthResponse {
+                status: "healthy".to_string(),
+                version: "1.0.0".to_string(),
+                uptime_seconds: 3600,
+            };
+
+            assert_eq!(response.status, "healthy");
+            assert_eq!(response.version, "1.0.0");
+            assert_eq!(response.uptime_seconds, 3600);
+        }
+
+        #[test]
+        fn test_stats_response_creation() {
+            let response = StatsResponse {
+                total_events: 100,
+                total_actions: 25,
+                uptime_seconds: 7200,
+                memory_usage_mb: Some(150.5),
+            };
+
+            assert_eq!(response.total_events, 100);
+            assert_eq!(response.total_actions, 25);
+            assert_eq!(response.uptime_seconds, 7200);
+            assert_eq!(response.memory_usage_mb, Some(150.5));
+        }
+
+        #[test]
+        fn test_reasoning_response_creation() {
+            use fukurow_core::model::SecurityAction;
+
+            let actions = vec![
+                SecurityAction::Alert {
+                    severity: "high".to_string(),
+                    message: "Test alert".to_string(),
+                    details: serde_json::json!({"test": "data"}),
+                }
+            ];
+
+            let response = ReasoningResponse {
+                actions: actions.clone(),
+                execution_time_ms: 150,
+                event_count: 5,
+            };
+
+            assert_eq!(response.actions.len(), 1);
+            assert_eq!(response.execution_time_ms, 150);
+            assert_eq!(response.event_count, 5);
+        }
+
+        #[test]
+        fn test_graph_query_response_creation() {
+            let triples = vec![
+                fukurow_core::model::Triple {
+                    subject: "s".to_string(),
+                    predicate: "p".to_string(),
+                    object: "o".to_string(),
+                }
+            ];
+
+            let response = GraphQueryResponse {
+                triples: triples.clone(),
+                count: 1,
+            };
+
+            assert_eq!(response.triples.len(), 1);
+            assert_eq!(response.count, 1);
+        }
+
+        #[test]
+        fn test_threat_intel_response_creation() {
+            let mut statistics = std::collections::HashMap::new();
+            statistics.insert("malware".to_string(), 10);
+            statistics.insert("phishing".to_string(), 5);
+
+            let response = ThreatIntelResponse {
+                indicators_count: 15,
+                sources_count: 3,
+                last_updated: 1640995200,
+                statistics,
+            };
+
+            assert_eq!(response.indicators_count, 15);
+            assert_eq!(response.sources_count, 3);
+            assert_eq!(response.last_updated, 1640995200);
+            assert_eq!(response.statistics.get("malware"), Some(&10));
+            assert_eq!(response.statistics.get("phishing"), Some(&5));
         }
     }
 }
