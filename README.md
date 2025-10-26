@@ -25,7 +25,7 @@ use fukurow::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut engine = ReasonerEngine::new();
+    let mut engine = FukurowEngine::new();
 
     let event = CyberEvent::NetworkConnection {
         source_ip: "192.168.1.100".to_string(),
@@ -118,23 +118,23 @@ cargo build --release
 cargo test
 
 # Run tests for specific crate
-cargo test -p reasoner-core
+cargo test -p fukurow-core
 cargo test -p rules-cyber
 ```
 
 ### CLI Usage
 ```bash
 # Start API server
-cargo run --bin reasoner-cli -- serve
+cargo run --bin fukurow-cli -- serve
 
 # Analyze single event
-cargo run --bin reasoner-cli -- analyze --json '{"type": "NetworkConnection", "source_ip": "192.168.1.10", "dest_ip": "192.168.1.100"}'
+cargo run --bin fukurow-cli -- analyze --json '{"type": "NetworkConnection", "source_ip": "192.168.1.10", "dest_ip": "192.168.1.100"}'
 
 # Process events from file
-cargo run --bin reasoner-cli -- process --input events.json --output results.json
+cargo run --bin fukurow-cli -- process --input events.json --output results.json
 
 # Interactive mode
-cargo run --bin reasoner-cli
+cargo run --bin fukurow-cli
 ```
 
 ### API Usage
@@ -164,7 +164,7 @@ curl -X POST http://localhost:3000/reason \
           └──────────┬───────────┘
                      │
           ┌─────────────────────┐
-          │  Reasoner Core      │
+          │  Fukurow Core       │
           │                     │
           │ • Rule Engine       │
           │ • Inference Logic   │
@@ -215,7 +215,7 @@ cargo build
 cargo build --release
 
 # Build specific crate
-cargo build -p reasoner-cli
+cargo build -p fukurow-cli
 ```
 
 ### Testing
@@ -224,7 +224,7 @@ cargo build -p reasoner-cli
 cargo test
 
 # Run tests for specific crate
-cargo test -p reasoner-core
+cargo test -p fukurow-core
 
 # Run with coverage (requires tarpaulin)
 cargo tarpaulin
