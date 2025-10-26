@@ -25,7 +25,7 @@ pub struct StoredTriple {
 pub struct RdfStore {
     /// All stored triples, indexed by graph
     triples: HashMap<GraphId, Vec<StoredTriple>>,
-    /// Audit trail
+    /// Audit trail (limited size for memory efficiency)
     audit_trail: Vec<AuditEntry>,
     /// Subject index for fast lookup
     subject_index: HashMap<String, HashSet<(GraphId, usize)>>,
@@ -33,17 +33,25 @@ pub struct RdfStore {
     predicate_index: HashMap<String, HashSet<(GraphId, usize)>>,
     /// Object index for fast lookup
     object_index: HashMap<String, HashSet<(GraphId, usize)>>,
+    /// Maximum audit trail size (for memory management)
+    max_audit_entries: usize,
 }
 
 impl RdfStore {
     /// Create a new empty RDF store
     pub fn new() -> Self {
+        Self::with_audit_limit(1000) // Default audit trail limit
+    }
+
+    /// Create a new RDF store with custom audit trail limit
+    pub fn with_audit_limit(max_audit_entries: usize) -> Self {
         Self {
             triples: HashMap::new(),
             audit_trail: Vec::new(),
             subject_index: HashMap::new(),
             predicate_index: HashMap::new(),
             object_index: HashMap::new(),
+            max_audit_entries,
         }
     }
 
@@ -71,8 +79,8 @@ impl RdfStore {
             .or_insert_with(HashSet::new)
             .insert((graph_id.clone(), index));
 
-        // Audit trail
-        self.audit_trail.push(AuditEntry {
+        // Audit trail with memory management
+        self.add_audit_entry(AuditEntry {
             id: Uuid::new_v4().to_string(),
             timestamp: Utc::now(),
             operation: AuditOperation::Insert {
@@ -232,6 +240,28 @@ impl RdfStore {
     /// Get audit trail (for serialization)
     pub fn get_audit_trail(&self) -> &[AuditEntry] {
         &self.audit_trail
+    }
+
+    /// Add audit entry with memory management
+    fn add_audit_entry(&mut self, entry: AuditEntry) {
+        self.audit_trail.push(entry);
+
+        // Memory management: remove oldest entries if over limit
+        if self.audit_trail.len() > self.max_audit_entries {
+            let remove_count = self.audit_trail.len() - self.max_audit_entries;
+            self.audit_trail.drain(0..remove_count);
+        }
+    }
+
+    /// Set maximum audit trail size
+    pub fn set_audit_limit(&mut self, limit: usize) {
+        self.max_audit_entries = limit;
+
+        // Apply limit immediately if current size exceeds
+        if self.audit_trail.len() > limit {
+            let remove_count = self.audit_trail.len() - limit;
+            self.audit_trail.drain(0..remove_count);
+        }
     }
 
     /// Rebuild all indices (expensive operation)

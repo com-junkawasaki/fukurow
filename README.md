@@ -1,5 +1,9 @@
 # 🦉 Fukurow - Rust Reasoning & Knowledge Graph Stack
 
+<p align="center">
+  <img src="assets/026.png" alt="Fukurow Logo" width="200">
+</p>
+
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
 
