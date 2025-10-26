@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/fukurow",
     "crates/fukurow-core",
     "crates/fukurow-store",
     "crates/fukurow-rules",
