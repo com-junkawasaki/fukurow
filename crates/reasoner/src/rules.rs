@@ -47,14 +47,58 @@ impl RuleEngine {
     /// Check if rule conditions are satisfied
     fn check_conditions(&self, store: &GraphStore, conditions: &[Triple]) -> bool {
         for condition in conditions {
-            let matches = store.find_triples(
-                Some(&condition.subject),
-                Some(&condition.predicate),
-                Some(&condition.object),
-            );
+            // Handle variables (starting with ?) by treating them as wildcards
+            let subject = if condition.subject.starts_with('?') {
+                None
+            } else {
+                Some(condition.subject.as_str())
+            };
+            let predicate = if condition.predicate.starts_with('?') {
+                None
+            } else {
+                Some(condition.predicate.as_str())
+            };
+            let object = if condition.object.starts_with('?') {
+                None
+            } else {
+                Some(condition.object.as_str())
+            };
+
+            let matches = store.find_triples(subject, predicate, object);
 
             if matches.is_empty() {
                 return false;
+            }
+
+            // For conditions with variables, we need to check if any of the matching triples
+            // satisfy the non-variable constraints
+            if condition.subject.starts_with('?') || condition.predicate.starts_with('?') || condition.object.starts_with('?') {
+                let mut found_match = false;
+                for triple in &matches {
+                    let subject_matches = if condition.subject.starts_with('?') {
+                        true // Variable matches anything
+                    } else {
+                        triple.subject == condition.subject
+                    };
+                    let predicate_matches = if condition.predicate.starts_with('?') {
+                        true // Variable matches anything
+                    } else {
+                        triple.predicate == condition.predicate
+                    };
+                    let object_matches = if condition.object.starts_with('?') {
+                        true // Variable matches anything
+                    } else {
+                        triple.object == condition.object
+                    };
+
+                    if subject_matches && predicate_matches && object_matches {
+                        found_match = true;
+                        break;
+                    }
+                }
+                if !found_match {
+                    return false;
+                }
             }
         }
         true
