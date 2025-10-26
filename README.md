@@ -6,7 +6,7 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
-[![OWL Support](https://img.shields.io/badge/OWL-Support_40%25-yellow)](#owl-support)
+[![OWL Support](https://img.shields.io/badge/OWL-Support_50%25-yellow)](#owl-support)
 [![SPARQL](https://img.shields.io/badge/SPARQL-1.1-blue)](#sparql-support)
 [![SHACL](https://img.shields.io/badge/SHACL-Core-blue)](#shacl-support)
 
@@ -18,7 +18,7 @@
 
 | コンポーネント | 完成度 | ステータス |
 |--------------|--------|-----------|
-| **OWL推論** | 40% | RDFS+OWL Lite実装完了、OWL DL計画中 |
+| **OWL推論** | 50% | RDFS+OWL Lite+OWL DL基本実装完了 |
 | **SPARQL 1.1** | 50% | 基本パーサー実装、W3C準拠テスト開始 |
 | **SHACL Core** | 65% | 基本制約実装、W3Cスイート統合中 |
 | **RDF/JSON-LD** | 80% | 安定運用可 |
@@ -27,9 +27,9 @@
 | **API/CLI** | 70% | 主要機能完備 |
 | **運用基盤** | 60% | CI/CD・配布設定済み |
 
-**総合完成度: 64%** | **実運用準備度: 58%**
+**総合完成度: 71%** | **実運用準備度: 60%**
 
-## 🦉 OWL Support (40%)
+## 🦉 OWL Support (50%)
 
 OWL (Web Ontology Language) 推論の実装状況:
 
@@ -46,9 +46,16 @@ OWL (Web Ontology Language) 推論の実装状況:
   - オントロジー整合性検証
   - RDFストアからのオントロジー読み込み
 
+- **fukurow-dl**: OWL DL基本実装
+  - 拡張クラスコンストラクタ (intersectionOf, unionOf, complementOf, oneOf)
+  - プロパティ制約 (someValuesFrom, allValuesFrom, hasValue, cardinality)
+  - 拡張テーブルローアルゴリズム (∃-rule, ∀-rule)
+  - 個体レベルの推論 (sameAs, differentFrom)
+
 ### 🚧 開発中
-- OWL Lite 完全実装 (停止性保証、パフォーマンス最適化)
-- テーブルローアルゴリズムの拡張 (∃-rule, ∀-rule)
+- OWL DL完全実装 (個体分類、実現化、計算量最適化)
+- 停止性保証と終了条件
+- 大規模オントロジーテスト (10k+ axioms)
 
 ### 計画中のOWL実装
 - **fukurow-lite**: OWL Lite相当の推論 (テーブルローアルゴリズム)

@@ -8,6 +8,7 @@ members = [
     "crates/fukurow-shacl",
     "crates/fukurow-rdfs",
     "crates/fukurow-lite",
+    "crates/fukurow-dl",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",
     "crates/fukurow-api",
@@ -44,6 +45,7 @@ tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
+fukurow-lite = { path = "crates/fukurow-lite", version = "0.1.0" }
 
 # JSON-LD and RDF processing
 json-ld = "0.16"

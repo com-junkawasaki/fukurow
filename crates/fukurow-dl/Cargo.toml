@@ -1,0 +1,26 @@
+[package]
+name = "fukurow-dl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OWL DL reasoning engine for Fukurow (complete tableau algorithm with individual reasoning)"
+keywords = ["owl", "dl", "reasoning", "tableau", "description-logics"]
+categories = ["algorithms", "data-structures"]
+
+[dependencies]
+fukurow-core = "0.1.0"
+fukurow-store = "0.1.0"
+fukurow-lite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "owl_dl_benchmark"
+harness = false
