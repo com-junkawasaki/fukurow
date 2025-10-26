@@ -5,11 +5,14 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "Reasoning engine orchestration that integrates reasoners and rules for Fukurow"
+keywords = ["reasoning", "inference", "engine", "orchestration", "knowledge-graph"]
+categories = ["algorithms", "concurrency"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
-fukurow-store = { path = "../fukurow-store" }
-fukurow-rules = { path = "../fukurow-rules" }
+fukurow-core = "0.1.0"
+fukurow-store = "0.1.0"
+fukurow-rules = "0.1.0"
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
