@@ -319,6 +319,16 @@ The system is configured via:
 ## Future Roadmap
 
 - [ ] WebAssembly compilation for browser deployment
+  - [ ] Expose `fukurow-core` to `wasm32-unknown-unknown` with `wasm-bindgen`
+  - [ ] Add `wasm` feature flags for `fukurow-engine` and `fukurow-store`
+  - [ ] Switch `uuid v4`/`getrandom` to `uuid/js` + `getrandom/js`
+  - [ ] Replace `chrono::Utc::now()` with `js_sys::Date` or injected clock
+  - [ ] Remove Tokio runtime assumptions; use `wasm-bindgen-futures` (`spawn_local`)
+  - [ ] Provide `cdylib` exports for reasoning entry points
+  - [ ] Minimal browser demo (load WASM, feed event, read actions)
+  - [ ] CI job: `wasm32-unknown-unknown` build and size budget check
+  - [ ] Benchmarks in Web Worker; document perf trade-offs
+
 - [ ] Persistent graph storage (PostgreSQL, Neo4j)
 - [ ] Advanced ML-based anomaly detection
 - [ ] Real-time streaming event processing

@@ -193,6 +193,25 @@
         ],
       },
 
+      wasm_enablement: {
+        id: "wasm_enablement",
+        name: "WASM Enablement for Inference",
+        type: "development",
+        description: "Enable browser-executable inference: feature flags, js RNG/clock, wasm exports, demo",
+        dependencies: ["deployment"],
+        outputs: [
+          "core_wasm_build",
+          "engine_store_wasm_feature_flags",
+          "uuid_js_getrandom_js",
+          "chrono_replaced_with_js_clock",
+          "wasm_bindgen_exports",
+          "browser_demo",
+          "ci_wasm_build_job",
+          "web_worker_benchmarks",
+        ],
+        status: "planned",
+      },
+
       sparql_shacl_implementation: {
         id: "sparql_shacl_implementation",
         name: "SPARQL and SHACL Full Implementation",
@@ -222,7 +241,8 @@
       { from: "documentation", to: "testing" },
       { from: "testing", to: "build_optimization" },
       { from: "build_optimization", to: "deployment" },
-      { from: "deployment", to: "sparql_shacl_implementation" },
+        { from: "deployment", to: "sparql_shacl_implementation" },
+        { from: "sparql_shacl_implementation", to: "wasm_enablement" },
     ],
 
     // Current execution state
@@ -242,7 +262,7 @@
         "deployment",
         "sparql_shacl_implementation",
       ],
-      pending_nodes: [],
+      pending_nodes: ["wasm_enablement"],
       blocked_nodes: [],
     },
 
