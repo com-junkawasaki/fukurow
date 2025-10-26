@@ -4,6 +4,7 @@ use super::orchestration::{ReasoningEngine, EngineResult, ProcessingOptions, Eng
 use fukurow_store::store::RdfStore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use chrono::{DateTime, Utc};
 
 /// Processing pipeline stage
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,8 +45,8 @@ pub struct ProcessingPipeline {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineExecution {
     pub stage_name: String,
-    pub started_at: chrono::DateTime<chrono::Utc>,
-    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub started_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
     pub result: Option<EngineResult>,
     pub error: Option<String>,
     pub next_stages: Vec<String>,
@@ -118,7 +119,7 @@ impl ProcessingPipeline {
     }
 
     async fn execute_stage(&self, stage: &PipelineStage, store: &RdfStore) -> PipelineExecution {
-        let started_at = chrono::Utc::now();
+        let started_at = Utc::now();
         let mut execution = PipelineExecution {
             stage_name: stage.name.clone(),
             started_at,
@@ -129,7 +130,7 @@ impl ProcessingPipeline {
         };
 
         // Create engine based on configuration
-        let engine_result = match &stage.engine {
+        let engine_result: Result<ReasoningEngine, PipelineError> = match &stage.engine {
             PipelineEngine::Rdfs => {
                 // TODO: Create RDFS engine
                 Err(PipelineError::EngineNotImplemented("RDFS".to_string()))
@@ -147,7 +148,7 @@ impl ProcessingPipeline {
             }
         };
 
-        execution.completed_at = Some(chrono::Utc::now());
+        execution.completed_at = Some(Utc::now());
 
         match engine_result {
             Ok(engine) => {

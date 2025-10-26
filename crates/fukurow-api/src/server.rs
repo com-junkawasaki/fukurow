@@ -7,8 +7,8 @@ use tokio::net::TcpListener;
 use tracing::{info, error};
 
 use crate::{routes::create_router, handlers::AppState};
-use reasoner_core::ReasonerEngine;
-use rules_cyber::threat_intelligence::ThreatProcessor;
+use fukurow_engine::ReasonerEngine;
+use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
 /// Server configuration
 #[derive(Debug, Clone)]
@@ -46,11 +46,7 @@ impl ReasonerServer {
         let threat_processor = ThreatProcessor::new();
 
         // Initialize reasoner with default cyber security rules
-        {
-            let mut rule_engine = reasoner_core::rules::RuleEngine::new();
-            rule_engine.add_default_cyber_rules();
-            // Note: Adding rules to reasoner would require mutable access
-        }
+        // TODO: Implement rule initialization for new fukurow architecture
 
         let app_state = AppState {
             reasoner: std::sync::Arc::new(reasoner),

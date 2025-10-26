@@ -15,7 +15,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["gftdcojp"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/gftdcojp/fukurow"
+repository = "https://github.com/com-junkawasaki/fukurow"
 
 [profile.release]
 # LTO (Link Time Optimization) - 最適化されたバイナリ生成
@@ -25,28 +25,9 @@ panic = "abort"
 strip = true
 opt-level = 3
 
-[profile.release.package.fukurow-engine]
-# エンジンcrateの特別最適化
-opt-level = "z"  # サイズ最適化優先
-lto = true
+# Package-specific optimizations are applied via Cargo features and conditional compilation
 
-[profile.release.package.fukurow-store]
-# ストアクrateの特別最適化
-opt-level = "s"  # サイズと速度のバランス
-
-# WebAssembly specific configurations
-[target.wasm32-unknown-unknown.dependencies]
-# WASM固有の依存関係（必要に応じて）
-getrandom = { version = "0.2", features = ["js"] }
-chrono = { version = "0.4", features = ["wasmbind"] }
-
-# WASMビルド時の機能フラグ
-[features]
-default = ["console_error_panic_hook"]
-console_error_panic_hook = ["dep:console_error_panic_hook"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-console_error_panic_hook = "0.1"
+# Note: WebAssembly support is configured per crate in their respective Cargo.toml files
 
 [workspace.dependencies]
 # Core dependencies shared across crates

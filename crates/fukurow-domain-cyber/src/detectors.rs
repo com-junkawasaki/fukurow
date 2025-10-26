@@ -1,6 +1,6 @@
 //! Cyber security threat detectors
 
-use reasoner_graph::model::{SecurityAction, CyberEvent, InferenceRule, Triple};
+use fukurow_core::model::{SecurityAction, CyberEvent, InferenceRule, Triple};
 use regex::Regex;
 use std::collections::HashSet;
 

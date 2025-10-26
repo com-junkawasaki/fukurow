@@ -77,8 +77,8 @@ pub enum Provenance {
 
 ### Installation
 ```bash
-git clone https://github.com/gftdcojp/reasoner-ts
-cd reasoner-ts
+git clone https://github.com/com-junkawasaki/fukurow
+cd fukurow
 cargo build --release
 ```
 

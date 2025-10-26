@@ -1,9 +1,9 @@
 //! CLI command definitions and handlers
 
 use clap::{Parser, Subcommand};
-use reasoner_core::ReasonerEngine;
-use reasoner_graph::model::CyberEvent;
-use rules_cyber::threat_intelligence::{ThreatProcessor, IndicatorType};
+use fukurow_engine::ReasonerEngine;
+use fukurow_core::model::CyberEvent;
+use fukurow_domain_cyber::threat_intelligence::{ThreatProcessor, IndicatorType};
 use std::path::PathBuf;
 use anyhow::Result;
 
@@ -169,7 +169,7 @@ impl CommandExecutor {
     }
 
     async fn execute_serve(&self, host: String, port: u16) -> Result<CommandResult> {
-        use reasoner_api::{ReasonerServer, ServerConfig};
+        use fukurow_api::{ReasonerServer, ServerConfig};
 
         let config = ServerConfig { host: host.clone(), port, max_connections: 100 };
         let server = ReasonerServer::with_config(config);
@@ -288,7 +288,7 @@ impl CommandExecutor {
             OutputFormat::Text => {
                 let mut output = format!("Found {} triples:\n", count);
                 for triple in &triples {
-                    output.push_str(&format!("  {} {} {}\n", triple.subject, triple.predicate, triple.object));
+                    output.push_str(&format!("  {} {} {}\n", triple.triple.subject, triple.triple.predicate, triple.triple.object));
                 }
                 output
             }

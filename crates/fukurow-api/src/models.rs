@@ -1,6 +1,7 @@
 //! API data models
 
-use reasoner_graph::model::{CyberEvent, SecurityAction};
+use fukurow_core::model::{CyberEvent, SecurityAction};
+use fukurow_engine::ReasonerError;
 use serde::{Deserialize, Serialize};
 
 /// API response wrapper
@@ -64,7 +65,7 @@ pub struct GraphQueryRequest {
 /// Graph query response
 #[derive(Debug, Serialize)]
 pub struct GraphQueryResponse {
-    pub triples: Vec<reasoner_graph::model::Triple>,
+    pub triples: Vec<fukurow_core::model::Triple>,
     pub count: usize,
 }
 
@@ -88,13 +89,13 @@ pub struct StatsResponse {
 /// Rule management request
 #[derive(Debug, Deserialize)]
 pub struct AddRuleRequest {
-    pub rule: reasoner_graph::model::InferenceRule,
+    pub rule: fukurow_core::model::InferenceRule,
 }
 
 /// Rules list response
 #[derive(Debug, Serialize)]
 pub struct RulesResponse {
-    pub rules: Vec<reasoner_graph::model::InferenceRule>,
+    pub rules: Vec<fukurow_core::model::InferenceRule>,
     pub count: usize,
 }
 
@@ -126,12 +127,13 @@ pub enum ApiError {
     InternalError(String),
 }
 
-impl From<reasoner_core::ReasonerError> for ApiError {
-    fn from(err: reasoner_core::ReasonerError) -> Self {
+impl From<ReasonerError> for ApiError {
+    fn from(err: ReasonerError) -> Self {
         match err {
-            reasoner_core::ReasonerError::GraphError(_) => ApiError::GraphError(err.to_string()),
-            reasoner_core::ReasonerError::RuleError(_) => ApiError::ReasoningError(err.to_string()),
-            reasoner_core::ReasonerError::ContextError(_) => ApiError::InternalError(err.to_string()),
+            ReasonerError::GraphError(_) => ApiError::GraphError(err.to_string()),
+            ReasonerError::RuleError(_) => ApiError::ReasoningError(err.to_string()),
+            ReasonerError::ReasoningError(_) => ApiError::ReasoningError(err.to_string()),
+            ReasonerError::StoreError(_) => ApiError::InternalError(err.to_string()),
         }
     }
 }

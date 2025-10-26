@@ -179,17 +179,17 @@ impl RdfStore {
             // Remove from indices
             self.rebuild_indices();
 
-            // Audit trail
-            self.audit_trail.push(AuditEntry {
-                id: Uuid::new_v4().to_string(),
-                timestamp: Utc::now(),
-                operation: AuditOperation::Clear {
-                    graph_id: graph_id.clone(),
-                    triple_count: count,
-                },
-                actor: None,
-                metadata: HashMap::new(),
-            });
+        // Audit trail with memory management
+        self.add_audit_entry(AuditEntry {
+            id: Uuid::new_v4().to_string(),
+            timestamp: Utc::now(),
+            operation: AuditOperation::Clear {
+                graph_id: graph_id.clone(),
+                triple_count: count,
+            },
+            actor: None,
+            metadata: HashMap::new(),
+        });
         }
     }
 
@@ -202,8 +202,8 @@ impl RdfStore {
         self.predicate_index.clear();
         self.object_index.clear();
 
-        // Audit trail
-        self.audit_trail.push(AuditEntry {
+        // Audit trail with memory management
+        self.add_audit_entry(AuditEntry {
             id: Uuid::new_v4().to_string(),
             timestamp: Utc::now(),
             operation: AuditOperation::Clear {

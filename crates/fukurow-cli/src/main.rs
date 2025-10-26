@@ -1,7 +1,7 @@
 //! Reasoner CLI main entry point
 
 use clap::Parser;
-use reasoner_cli::{commands::{Cli, CommandExecutor}, interactive::start_interactive};
+use fukurow_cli::{commands::{Cli, CommandExecutor}, interactive::start_interactive};
 use tracing_subscriber;
 use anyhow::Result;
 

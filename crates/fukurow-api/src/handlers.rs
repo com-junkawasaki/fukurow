@@ -10,8 +10,8 @@ use tokio::sync::RwLock;
 use std::time::Instant;
 
 use crate::models::*;
-use reasoner_core::ReasonerEngine;
-use rules_cyber::threat_intelligence::ThreatProcessor;
+use fukurow_engine::ReasonerEngine;
+use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
 /// Shared application state
 #[derive(Clone)]
@@ -93,7 +93,7 @@ pub async fn query_graph(
 
     let count = triples.len();
     let response = GraphQueryResponse {
-        triples: triples.into_iter().cloned().collect(),
+        triples: triples.into_iter().map(|stored| stored.triple.clone()).collect(),
         count,
     };
 
