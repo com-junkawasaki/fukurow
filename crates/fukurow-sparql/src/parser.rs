@@ -4,7 +4,7 @@ use logos::Logos;
 use winnow::{
     ModalResult, Parser,
     combinator::{alt, opt, repeat, separated, preceded, terminated, delimited},
-    token::{take_while, one_of, tag},
+    token::take_while,
 };
 use std::collections::HashMap;
 
@@ -375,30 +375,60 @@ pub struct DefaultSparqlParser;
 
 impl SparqlParser for DefaultSparqlParser {
     fn parse(&self, query: &str) -> Result<SparqlQuery, SparqlError> {
-        // TODO: 完全なパーサー実装
-        // ここでは基本的なSELECTクエリのみ対応
-        if query.trim().starts_with("SELECT") {
-            // 簡易パーサー実装
-            Ok(SparqlQuery {
-                query_type: QueryType::Select,
-                variables: vec![], // TODO: 変数解析
-                dataset: vec![],
-                where_clause: GraphPattern::Bgp(vec![]), // TODO: WHERE句解析
-                solution_modifier: SolutionModifier {
-                    group: None,
-                    having: None,
-                    order: None,
-                    limit: None,
-                    offset: None,
-                    distinct: false,
-                    reduced: false,
-                },
-                values: None,
-                base_iri: None,
-                prefixes: HashMap::new(),
-            })
-        } else {
-            Err(SparqlError::UnsupportedFeature("Only SELECT queries supported".to_string()))
+        // 簡易パーサー実装 - 基本的なSELECTクエリのみ
+        let mut prefixes = HashMap::new();
+        let mut variables = Vec::new();
+        let mut query_type = QueryType::Select;
+
+        // 基本的なPREFIXとSELECTのパース
+        let lines: Vec<&str> = query.lines().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
+
+        for line in &lines {
+            if line.starts_with("PREFIX") {
+                // PREFIX解析 (簡易)
+                if let Some(prefix_def) = line.strip_prefix("PREFIX") {
+                    let parts: Vec<&str> = prefix_def.trim().split_whitespace().collect();
+                    if parts.len() >= 2 {
+                        let prefix = parts[0].trim_end_matches(':');
+                        let iri = parts[1].trim_matches('<').trim_matches('>');
+                        prefixes.insert(prefix.to_string(), Iri(iri.to_string()));
+                    }
+                }
+            } else if line.starts_with("SELECT") {
+                // SELECT変数解析 (簡易)
+                if let Some(var_part) = line.strip_prefix("SELECT") {
+                    for part in var_part.trim().split_whitespace() {
+                        if part.starts_with('?') {
+                            variables.push(Variable(part[1..].to_string()));
+                        }
+                    }
+                }
+            } else if line.starts_with("CONSTRUCT") {
+                query_type = QueryType::Construct(vec![]); // TODO: テンプレート解析
+            } else if line.starts_with("ASK") {
+                query_type = QueryType::Ask;
+            } else if line.starts_with("DESCRIBE") {
+                query_type = QueryType::Describe(vec![]); // TODO: 変数/IRI解析
+            }
         }
+
+        Ok(SparqlQuery {
+            query_type,
+            variables,
+            dataset: vec![],
+            where_clause: GraphPattern::Bgp(vec![]), // TODO: WHERE句解析
+            solution_modifier: SolutionModifier {
+                group: None,
+                having: None,
+                order: None,
+                limit: None,
+                offset: None,
+                distinct: false,
+                reduced: false,
+            },
+            values: None,
+            base_iri: None,
+            prefixes,
+        })
     }
 }

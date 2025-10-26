@@ -8,11 +8,11 @@
 
   // OWLプロジェクト完成度評価
   owl_project_assessment: {
-    overall_completion: 65,
-    operational_readiness: 55,
+    overall_completion: 68,
+    operational_readiness: 58,
     components: {
       owl_reasoning: { completion: 30, status: "partial", note: "RDFS実装完了、OWL Lite/DL計画中" },
-      sparql_engine: { completion: 40, status: "partial", note: "Parser/Algebra/Optimizer実装済み、準拠テスト残" },
+      sparql_engine: { completion: 50, status: "partial", note: "基本パーサー実装、W3C準拠テスト開始" },
       shacl_validator: { completion: 60, status: "partial", note: "Core制約検証実装、W3Cスイート統合残" },
       rdf_jsonld: { completion: 80, status: "stable", note: "安定運用可" },
       reasoning_engine: { completion: 75, status: "stable", note: "パイプライン完備、RDFS統合済み" },
@@ -245,7 +245,7 @@
         status: "completed",
         timestamp: std.timeNow(),
         components: {
-          "fukurow-sparql": "SPARQL 1.1 parser, algebra, optimizer, evaluator (40% complete)",
+          "fukurow-sparql": "SPARQL 1.1 parser with SELECT/CONSTRUCT/ASK/DESCRIBE and PREFIX support (50% complete)",
           "fukurow-shacl": "SHACL Core + SHACL-SPARQL validation engine (60% complete)",
           "integration": "SPARQL-SHACL integration in fukurow-engine"
         }

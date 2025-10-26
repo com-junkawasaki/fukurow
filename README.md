@@ -19,7 +19,7 @@
 | コンポーネント | 完成度 | ステータス |
 |--------------|--------|-----------|
 | **OWL推論** | 30% | RDFS実装完了、OWL Lite/DL計画中 |
-| **SPARQL 1.1** | 40% | 実装骨格完了、準拠テスト残 |
+| **SPARQL 1.1** | 50% | 基本パーサー実装、W3C準拠テスト開始 |
 | **SHACL Core** | 60% | 検証エンジン実装、W3Cスイート統合残 |
 | **RDF/JSON-LD** | 80% | 安定運用可 |
 | **推論エンジン** | 75% | パイプライン完備、RDFS統合済み |
@@ -27,7 +27,7 @@
 | **API/CLI** | 70% | 主要機能完備 |
 | **運用基盤** | 60% | CI/CD・配布設定済み |
 
-**総合完成度: 65%** | **実運用準備度: 55%**
+**総合完成度: 68%** | **実運用準備度: 58%**
 
 ## 🦉 OWL Support (30%)
 
@@ -49,26 +49,30 @@ OWL (Web Ontology Language) 推論の実装状況:
 - RDFS完全推論: ✅ (subClassOf, subPropertyOf, domain, range)
 - 推論エンジン統合: ✅ (ReasoningEngine に RDFS ステップ追加)
 
-## 🔍 SPARQL Support (40%)
+## 🔍 SPARQL Support (50%)
 
 SPARQL 1.1 クエリエンジンの実装状況:
 
 ### ✅ 実装済み機能
 - **Parser**: SPARQL構文解析 (logos + winnow)
+  - SELECT/CONSTRUCT/ASK/DESCRIBEクエリタイプ ✅
+  - PREFIX宣言の解析 ✅
+  - 変数解析 ✅
 - **Algebra**: 論理代数変換 (BGP, JOIN, UNION, FILTER, OPTIONAL)
 - **Optimizer**: クエリ最適化 (フィルタプッシュダウン)
 - **Evaluator**: 実行エンジン (SELECT, CONSTRUCT, ASK)
 
 ### 🚧 開発中/未実装
+- WHERE句の完全パース
 - プロパティパス (ZeroOrMore, OneOrMore, Alternative)
 - 集約関数 (COUNT, SUM, AVG, MIN, MAX)
 - ORDER BY / LIMIT / OFFSET
 - SERVICE (フェデレーテッドクエリ)
 
 ### 🎯 次のステップ
-- W3C SPARQL 1.1 テストスイート準拠
-- プロパティパス完全実装
-- パフォーマンス最適化
+- WHERE句の構文解析実装
+- W3C SPARQL 1.1 テストスイート準拠 (syntax-sparql1-5)
+- FILTER/OPTIONAL/UNIONの実装
 
 ## ✅ SHACL Support (60%)
 
