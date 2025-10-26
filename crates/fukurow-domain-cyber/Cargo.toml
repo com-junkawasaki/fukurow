@@ -1,5 +1,5 @@
 [package]
-name = "rules-cyber"
+name = "fukurow-domain-cyber"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -7,8 +7,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-reasoner-core = { path = "../reasoner" }
-reasoner-graph = { path = "../graph" }
+fukurow-core = { path = "../fukurow-core" }
+fukurow-rules = { path = "../fukurow-rules" }
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true

@@ -1,14 +1,12 @@
-//! # Reasoner Core Library
+//! # Fukurow Engine
 //!
-//! JSON-LDベースの推論エンジン
-//! サイバーセキュリティイベントからセキュリティアクションを推論
+//! Reasoning engine orchestration
+//! Integrates reasoners and rules for knowledge processing
 
 pub mod engine;
-pub mod rules;
-pub mod inference;
-pub mod context;
+pub mod orchestration;
+pub mod pipeline;
 
 pub use engine::*;
-pub use rules::*;
-pub use inference::*;
-pub use context::*;
+pub use orchestration::*;
+pub use pipeline::*;

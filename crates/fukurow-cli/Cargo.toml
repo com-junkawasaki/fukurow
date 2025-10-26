@@ -1,5 +1,5 @@
 [package]
-name = "reasoner-cli"
+name = "fukurow-cli"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -7,10 +7,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-reasoner-core = { path = "../reasoner" }
-reasoner-graph = { path = "../graph" }
-rules-cyber = { path = "../rules-cyber" }
-reasoner-api = { path = "../api" }
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
+fukurow-engine = { path = "../fukurow-engine" }
+fukurow-domain-cyber = { path = "../fukurow-domain-cyber" }
+fukurow-api = { path = "../fukurow-api" }
 clap = { version = "4.0", features = ["derive"] }
 serde.workspace = true
 serde_json.workspace = true

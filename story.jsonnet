@@ -1,10 +1,10 @@
 {
-  // Reasoner TS - JSON-LD Cyber Security Reasoner
+  // 🦉 Fukurow - Rust Reasoning & Knowledge Graph Stack
   // Process Network Story in Merkle DAG format
 
   version: "1.0.0",
-  name: "reasoner-ts",
-  description: "High-performance JSON-LD reasoner for cyber security event analysis",
+  name: "fukurow",
+  description: "JSON-LD / RDF / OWL / SPARQL / GraphQL-LD ベースの知識を処理する Rust スタック。高速推論エンジンと監査可能な知識ストアを統合。",
 
   // Merkle DAG Process Network Definition
   process_network: {
@@ -100,10 +100,23 @@
         outputs: ["cli_commands", "interactive_mode", "file_processing"],
         status: "completed",
         timestamp: std.timeNow(),
+      },
+
+      fukurow_refactor: {
+        id: "fukurow_refactor",
+        name: "Fukurow Architecture Refactor",
+        type: "refactoring",
+        description: "Refactor project to Fukurow architecture with modular crates (fukurow-core, fukurow-store, fukurow-rules, fukurow-engine, fukurow-domain-cyber)",
+        dependencies: ["cli_crate"],
+        outputs: ["fukurow_crate_structure", "provenance_store", "rule_traits", "reasoning_engine"],
+        status: "completed",
+        timestamp: std.timeNow(),
         components: {
-          commands: "CLI command definitions and execution",
-          interactive: "Interactive shell mode",
-          main: "CLI entry point with tracing",
+          "fukurow-core": "RDF/JSON-LDコアデータモデル",
+          "fukurow-store": "RDF Store + provenance付きTriple管理",
+          "fukurow-rules": "ルールトレイトと制約検証(SHACL相当)",
+          "fukurow-engine": "推論オーケストレーション",
+          "fukurow-domain-cyber": "サイバー防御ドメインルール群",
         },
       },
 
@@ -176,7 +189,8 @@
       { from: "reasoner_crate", to: "rules_cyber_crate" },
       { from: "rules_cyber_crate", to: "api_crate" },
       { from: "api_crate", to: "cli_crate" },
-      { from: "cli_crate", to: "documentation" },
+      { from: "cli_crate", to: "fukurow_refactor" },
+      { from: "fukurow_refactor", to: "documentation" },
       { from: "documentation", to: "testing" },
       { from: "testing", to: "build_optimization" },
       { from: "build_optimization", to: "deployment" },
@@ -192,6 +206,7 @@
         "rules_cyber_crate",
         "api_crate",
         "cli_crate",
+        "fukurow_refactor",
         "documentation",
         "testing",
       ],

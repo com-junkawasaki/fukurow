@@ -1,19 +1,50 @@
-# Reasoner TS - JSON-LD Cyber Security Reasoner
+# 🦉 Fukurow - Rust Reasoning & Knowledge Graph Stack
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
 
-A high-performance JSON-LD reasoner specialized for cyber security event analysis, built in Rust with WebAssembly support.
+**JSON-LD / RDF / OWL / SPARQL / GraphQL-LD** ベースの知識を処理する Rust スタック。
 
-## Overview
+目的: 推論・検証・クエリ・アクション提案までを統合し、リアルタイムサイバー防御に利用できる形にする。
+高速推論エンジンと監査可能な知識ストアを Rust で統合。
 
-This project implements a sophisticated reasoning engine that processes cyber security events (EDR/SIEM data) using JSON-LD graphs and OWL-like inference rules. The system is designed with a clean architecture separating concerns across multiple crates:
+## 🧩 全体Crate構成
 
-- **graph**: JSON-LD graph storage and querying
-- **reasoner**: Core inference engine with rule evaluation
-- **rules-cyber**: Cyber security specific detection rules
-- **api**: RESTful web API
-- **cli**: Command-line interface
+```
+fukurow/
+├── fukurow-core            // RDF/JSON-LDコアデータモデル
+├── fukurow-store           // RDF Store + provenance付きTriple管理
+├── fukurow-sparql          // SPARQLクエリパーサと実行エンジン
+├── fukurow-gqlld           // GraphQL-LDクエリ → SPARQL変換
+├── fukurow-rdfs            // RDFSレベル推論
+├── fukurow-lite            // OWL Lite相当の推論
+├── fukurow-dl              // OWL DL相当の整合性・同定推論
+├── fukurow-rules           // ルールトレイトと制約検証(SHACL相当)
+├── fukurow-engine          // 推論オーケストレーション
+└── fukurow-domain-cyber    // サイバー防御ドメインルール群
+```
+
+## ⚙️ fukurow-store: RDF Store設計
+
+### 役割
+* 観測事実・推論事実を格納する軽量RDFストア。
+* provenance (Sensor/Inferred) と timestamp を管理。
+* サイバー防御で必要な監査・トレーサビリティを確保。
+
+### 型モデル
+```rust
+pub struct StoredTriple {
+    pub graph_id: GraphId,
+    pub triple: Triple,
+    pub asserted_at: Timestamp,
+    pub provenance: Provenance,
+}
+
+pub enum Provenance {
+    Sensor { source: String },
+    Inferred { rule: String },
+}
+```
 
 ## Key Features
 
@@ -123,18 +154,21 @@ curl -X POST http://localhost:3000/reason \
           └─────────────────────┘
 ```
 
-## Project Structure
+## 📚 RDF Store選定方針
 
-```
-crates/
-├── graph/          # JSON-LD graph operations
-├── reasoner/       # Inference engine core
-├── rules-cyber/    # Cyber security rules
-├── api/            # REST API server
-└── cli/            # Command-line interface
+| 方式                | 特徴             | 適用領域       |
+| ----------------- | -------------- | ---------- |
+| Rustネイティブ         | 高速・GCレス・WASM化可 | リアルタイム防御コア |
+| RDB (Postgres等)   | 永続・監査性         | 長期監査・履歴分析  |
+| 外部トリプルストア (Jena等) | 完全SPARQL・既存資産  | バッチ/夜間監査   |
 
-story.jsonnet       # Process network definition
-```
+結論: **fukurow-storeはRust内製インメモリ＋永続サポート**、監査・長期分析は外部連携。
+
+## 🌙 総括
+
+* fukurowは「知識グラフストア × 推論 × 即時アクション × 監査クエリ」の統合基盤。
+* JSON-LDをI/Oにし、OWLの意味論をRustルールにコンパイルする。
+* 夜中でも眠らず判断するシステムのための、覚醒した知識推論フクロウ。🦉
 
 ## Development
 
