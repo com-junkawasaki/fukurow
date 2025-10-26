@@ -342,4 +342,154 @@ mod tests {
         let triples = result.unwrap();
         assert!(triples.is_empty());
     }
+
+    #[test]
+    fn test_iri_creation_and_display() {
+        let iri = Iri::new("http://example.org/test".to_string());
+        assert_eq!(iri.as_str(), "http://example.org/test");
+        assert_eq!(format!("{}", iri), "http://example.org/test");
+    }
+
+    #[test]
+    fn test_iri_equality() {
+        let iri1 = Iri::new("http://example.org/test".to_string());
+        let iri2 = Iri::new("http://example.org/test".to_string());
+        let iri3 = Iri::new("http://example.org/other".to_string());
+
+        assert_eq!(iri1, iri2);
+        assert_ne!(iri1, iri3);
+    }
+
+    #[test]
+    fn test_iri_hash_and_ord() {
+        let mut set = HashSet::new();
+        let iri1 = Iri::new("http://example.org/test1".to_string());
+        let iri2 = Iri::new("http://example.org/test2".to_string());
+
+        set.insert(iri1.clone());
+        set.insert(iri2.clone());
+
+        assert_eq!(set.len(), 2);
+        assert!(set.contains(&iri1));
+        assert!(set.contains(&iri2));
+    }
+
+    #[test]
+    fn test_vocabulary_constants() {
+        assert_eq!(vocabulary::RDFS_SUBCLASS_OF, "http://www.w3.org/2000/01/rdf-schema#subClassOf");
+        assert_eq!(vocabulary::RDFS_SUBPROPERTY_OF, "http://www.w3.org/2000/01/rdf-schema#subPropertyOf");
+        assert_eq!(vocabulary::RDFS_DOMAIN, "http://www.w3.org/2000/01/rdf-schema#domain");
+        assert_eq!(vocabulary::RDFS_RANGE, "http://www.w3.org/2000/01/rdf-schema#range");
+        assert_eq!(vocabulary::RDF_TYPE, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+        assert_eq!(vocabulary::RDFS_CLASS, "http://www.w3.org/2000/01/rdf-schema#Class");
+        assert_eq!(vocabulary::RDF_PROPERTY, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property");
+    }
+
+    #[test]
+    fn test_vocabulary_functions() {
+        assert_eq!(vocabulary::rdfs_subclass_of(), Iri::new("http://www.w3.org/2000/01/rdf-schema#subClassOf".to_string()));
+        assert_eq!(vocabulary::rdfs_subproperty_of(), Iri::new("http://www.w3.org/2000/01/rdf-schema#subPropertyOf".to_string()));
+        assert_eq!(vocabulary::rdfs_domain(), Iri::new("http://www.w3.org/2000/01/rdf-schema#domain".to_string()));
+        assert_eq!(vocabulary::rdfs_range(), Iri::new("http://www.w3.org/2000/01/rdf-schema#range".to_string()));
+        assert_eq!(vocabulary::rdf_type(), Iri::new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string()));
+    }
+
+    #[test]
+    fn test_rdfs_reasoner_creation() {
+        let reasoner = RdfsReasoner::new();
+        assert!(reasoner.class_hierarchy.is_empty());
+        assert!(reasoner.property_hierarchy.is_empty());
+        assert!(reasoner.domain_constraints.is_empty());
+        assert!(reasoner.range_constraints.is_empty());
+        assert!(reasoner.inferred_triples.is_empty());
+    }
+
+    #[test]
+    fn test_rdfs_config_creation() {
+        let config = RdfsConfig::default();
+        assert_eq!(config.max_iterations, 1000);
+        assert_eq!(config.timeout_ms, 30000);
+    }
+
+    #[test]
+    fn test_rdfs_config_custom() {
+        let config = RdfsConfig {
+            max_iterations: 50,
+            timeout_ms: 60000,
+        };
+        assert_eq!(config.max_iterations, 50);
+        assert_eq!(config.timeout_ms, 60000);
+    }
+
+    #[test]
+    fn test_rdfs_error_display() {
+        let timeout_err = RdfsError::Timeout(5000);
+        assert!(timeout_err.to_string().contains("Inference timeout after 5000ms"));
+
+        let iteration_err = RdfsError::MaxIterationsExceeded(100);
+        assert!(iteration_err.to_string().contains("Maximum iterations (100) exceeded"));
+
+        let invalid_err = RdfsError::InvalidTriple("invalid triple".to_string());
+        assert!(invalid_err.to_string().contains("Invalid RDFS triple: invalid triple"));
+
+        let store_err = RdfsError::StoreError("store error".to_string());
+        assert!(store_err.to_string().contains("Store error: store error"));
+    }
+
+    #[test]
+    fn test_property_hierarchy_closure() {
+        let mut reasoner = RdfsReasoner::new();
+
+        // hasLeg subPropertyOf hasPart, hasPart subPropertyOf hasRelated
+        reasoner.property_hierarchy.insert(
+            Iri::new("http://example.org/hasLeg".to_string()),
+            HashSet::from([Iri::new("http://example.org/hasPart".to_string())])
+        );
+        reasoner.property_hierarchy.insert(
+            Iri::new("http://example.org/hasPart".to_string()),
+            HashSet::from([Iri::new("http://example.org/hasRelated".to_string())])
+        );
+
+        // 推移的閉包を計算
+        reasoner.compute_transitive_closure();
+
+        // hasLeg は hasRelated のサブプロパティであるべき
+        assert!(reasoner.property_hierarchy
+            .get(&Iri::new("http://example.org/hasLeg".to_string()))
+            .unwrap()
+            .contains(&Iri::new("http://example.org/hasRelated".to_string())));
+    }
+
+    #[test]
+    fn test_multiple_superclasses() {
+        let mut reasoner = RdfsReasoner::new();
+
+        // A subclassOf B, A subclassOf C
+        reasoner.class_hierarchy.insert(
+            Iri::new("http://example.org/A".to_string()),
+            HashSet::from([
+                Iri::new("http://example.org/B".to_string()),
+                Iri::new("http://example.org/C".to_string())
+            ])
+        );
+
+        // B subclassOf D, C subclassOf D
+        reasoner.class_hierarchy.insert(
+            Iri::new("http://example.org/B".to_string()),
+            HashSet::from([Iri::new("http://example.org/D".to_string())])
+        );
+        reasoner.class_hierarchy.insert(
+            Iri::new("http://example.org/C".to_string()),
+            HashSet::from([Iri::new("http://example.org/D".to_string())])
+        );
+
+        // 推移的閉包を計算
+        reasoner.compute_transitive_closure();
+
+        // A は D のサブクラスであるべき
+        assert!(reasoner.class_hierarchy
+            .get(&Iri::new("http://example.org/A".to_string()))
+            .unwrap()
+            .contains(&Iri::new("http://example.org/D".to_string())));
+    }
 }

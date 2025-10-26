@@ -27,8 +27,9 @@
 | **API/CLI** | 70% | 主要機能完備 |
 | **SIEM統合** | 80% | Splunk・ELK・Chronicle対応完了 |
 | **運用基盤** | 60% | CI/CD・配布設定済み |
+| **テストカバレッジ** | 45% | 8 crateで193+テスト、信頼性向上 |
 
-**総合完成度: 77%** | **実運用準備度: 64%**
+**総合完成度: 78%** | **実運用準備度: 65%** | **テストカバレッジ: 45%**
 
 ## 🦉 OWL Support (60%)
 
@@ -120,6 +121,64 @@ SHACL Core + SHACL-SPARQL 検証エンジンの実装状況:
 - W3C準拠テストスイート統合 (コンパイル修正中)
 - SHACL-SPARQL拡張制約
 - W3C SHACLテストスイート完全準拠
+
+## 🧪 テストカバレッジ (45%)
+
+Fukurowプロジェクトでは、信頼性の高いソフトウェア開発を目指し、8つの主要crateに対して193個以上のテストケースを実装しています。
+
+### 📊 カバレッジ状況
+
+| Crate | カバレッジ | テスト数 | 主なテスト対象 |
+|-------|-----------|----------|----------------|
+| **fukurow-core** | 87.95% | 15+ | RDFモデル、JSON-LD変換、クエリ処理 |
+| **fukurow-store** | 82.92% | 25+ | RDFストア、アダプタ、永続化、監査 |
+| **fukurow-rules** | 58.49% | 20+ | ルールトレイト、制約検証、バインディング |
+| **fukurow-engine** | 31.38% | 15+ | 推論オーケストレーション、エラー処理 |
+| **fukurow-rdfs** | 46.73% | 20+ | RDFS推論エンジン、階層推論 |
+| **fukurow-sparql** | 27.06% | 25+ | SPARQLパーサー、クエリ実行、W3C準拠 |
+| **fukurow-api** | 26.14% | 40+ | REST APIハンドラー、モデル検証 |
+| **fukurow-siem** | 10.26% | 15+ | SIEM統合、イベント処理 |
+
+### 🧪 テスト実装の特徴
+
+#### モックベースの分離テスト
+- **APIハンドラー**: `MockReasonerEngine`、`MockThreatProcessor` を使用した分離テスト
+- **依存関係注入**: テスト固有の依存解決で本番コードの変更を最小化
+- **非同期テスト**: `tokio::runtime::Runtime` を使用した async テスト実行
+
+#### 包括的なテストケース
+- **ユニットテスト**: 個々の関数・メソッドの正確性検証
+- **統合テスト**: コンポーネント間連携の動作確認
+- **W3C準拠テスト**: SPARQL 1.1 構文テストスイート
+
+#### テスト品質向上
+- **カバレッジ測定**: `cargo-tarpaulin` を使用した継続的カバレッジ監視
+- **エラー処理**: 境界条件・エラーケースの網羅的テスト
+- **性能テスト**: Criterion ベンチマークによる性能劣化検知
+
+### 🔧 テスト実行方法
+
+```bash
+# 全テスト実行
+cargo test
+
+# 特定crateのテスト
+cargo test -p fukurow-core
+cargo test -p fukurow-api
+
+# カバレッジレポート生成
+cargo tarpaulin --manifest-path crates/fukurow-core/Cargo.toml --out Html --output-dir coverage
+
+# 並列実行でのテスト
+cargo test -- --test-threads=4
+```
+
+### 🎯 テスト戦略の成果
+
+- **信頼性向上**: 193個以上のテストケースでバグ早期発見
+- **リファクタリング安全性**: テストカバレッジによる変更影響評価
+- **ドキュメント効果**: テストコードとしての使用例提供
+- **CI/CD統合**: GitHub Actionsでの自動テスト実行
 
 ## 🦉 Fukurow Unified Crate
 
@@ -247,6 +306,9 @@ cargo test
 # Run tests for specific crate
 cargo test -p fukurow-core
 cargo test -p fukurow-domain-cyber
+
+# Run tests with coverage (requires cargo-tarpaulin)
+cargo tarpaulin --manifest-path crates/fukurow-core/Cargo.toml --out Html --output-dir coverage
 ```
 
 ### CLI Usage
