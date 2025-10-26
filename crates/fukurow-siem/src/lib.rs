@@ -158,6 +158,9 @@ pub enum SiemError {
     #[error("Parse error: {0}")]
     ParseError(String),
 
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+
     #[error("API error: {status} - {message}")]
     ApiError { status: u16, message: String },
 
@@ -189,7 +192,7 @@ impl SiemManager {
     pub async fn broadcast_event(&self, event: SiemEvent) -> SiemResult<()> {
         for client in &self.clients {
             if let Err(e) = client.send_event(event.clone()).await {
-                log::warn!("Failed to send event to SIEM client: {:?}", e);
+                eprintln!("Failed to send event to SIEM client: {:?}", e);
                 // Continue with other clients even if one fails
             }
         }
@@ -200,7 +203,7 @@ impl SiemManager {
     pub async fn broadcast_events(&self, events: Vec<SiemEvent>) -> SiemResult<()> {
         for client in &self.clients {
             if let Err(e) = client.send_events(events.clone()).await {
-                log::warn!("Failed to send events to SIEM client: {:?}", e);
+                eprintln!("Failed to send events to SIEM client: {:?}", e);
                 // Continue with other clients even if one fails
             }
         }

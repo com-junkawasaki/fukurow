@@ -227,7 +227,7 @@ impl SiemClient for ElkClient {
 }
 
 /// Elasticsearch document structure
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct ElasticsearchDocument {
     id: String,
     timestamp: String,

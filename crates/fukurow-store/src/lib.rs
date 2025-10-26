@@ -17,3 +17,7 @@ pub mod adapter;
 pub use store::*;
 pub use provenance::*;
 pub use persistence::*;
+
+// Re-export for tests
+#[cfg(test)]
+pub use adapter::sqlite::SqliteAdapter;

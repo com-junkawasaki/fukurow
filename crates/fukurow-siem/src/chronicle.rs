@@ -230,6 +230,9 @@ impl ChronicleClient {
             "Chronicle event".to_string()
         };
 
+        let additional = udm.additional.clone().unwrap_or(serde_json::Value::Null);
+        let raw_data = Some(serde_json::to_string(&udm).unwrap_or_default());
+
         Ok(SiemEvent {
             id: udm.metadata.product_log_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
             timestamp: udm.metadata.event_timestamp
@@ -239,8 +242,8 @@ impl ChronicleClient {
             source: "chronicle".to_string(),
             severity,
             message,
-            metadata: udm.additional.unwrap_or(serde_json::Value::Null),
-            raw_data: Some(serde_json::to_string(&udm).unwrap_or_default()),
+            metadata: additional,
+            raw_data,
         })
     }
 }
