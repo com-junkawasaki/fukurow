@@ -5,9 +5,12 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "RDF triple store with provenance tracking and audit trails for Fukurow"
+keywords = ["rdf", "triple-store", "provenance", "audit", "knowledge-graph"]
+categories = ["database", "data-structures"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
+fukurow-core = "0.1.0"
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true

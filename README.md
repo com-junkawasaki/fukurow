@@ -12,20 +12,59 @@
 目的: 推論・検証・クエリ・アクション提案までを統合し、リアルタイムサイバー防御に利用できる形にする。
 高速推論エンジンと監査可能な知識ストアを Rust で統合。
 
-## 🧩 全体Crate構成
+## 🦉 Fukurow Unified Crate
 
+Fukurowの全機能を統合したメインcrateです。簡単な導入で全ての機能を活用できます。
+
+```bash
+cargo add fukurow
 ```
-fukurow/
-├── fukurow-core            // RDF/JSON-LDコアデータモデル
-├── fukurow-store           // RDF Store + provenance付きTriple管理
-├── fukurow-sparql          // SPARQLクエリパーサと実行エンジン
-├── fukurow-gqlld           // GraphQL-LDクエリ → SPARQL変換
-├── fukurow-rdfs            // RDFSレベル推論
-├── fukurow-lite            // OWL Lite相当の推論
-├── fukurow-dl              // OWL DL相当の整合性・同定推論
-├── fukurow-rules           // ルールトレイトと制約検証(SHACL相当)
-├── fukurow-engine          // 推論オーケストレーション
-└── fukurow-domain-cyber    // サイバー防御ドメインルール群
+
+```rust
+use fukurow::prelude::*;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut engine = ReasonerEngine::new();
+
+    let event = CyberEvent::NetworkConnection {
+        source_ip: "192.168.1.100".to_string(),
+        dest_ip: "10.0.0.1".to_string(),
+        port: 443,
+        protocol: "TCP".to_string(),
+        timestamp: chrono::Utc::now().timestamp(),
+    };
+
+    engine.add_event(event).await?;
+    let actions = engine.reason().await?;
+
+    println!("Generated {} actions", actions.len());
+    Ok(())
+}
+```
+
+## 🧩 モジュラーアーキテクチャ（crates.io）
+
+公開済み crates（v0.1.0）:
+- fukurow-core
+- fukurow-store
+- fukurow-rules
+- fukurow-engine
+- fukurow-domain-cyber
+- fukurow-api
+- fukurow-cli
+- fukurow (統合)
+
+### ソース構成
+```
+fukurow/                     # 🦉 統合メインcrate
+├── fukurow-core            # 📊 RDF/JSON-LDコアデータモデル
+├── fukurow-store           # 💾 RDF Store + provenance付きTriple管理
+├── fukurow-rules           # 🛡️ ルールトレイトと制約検証(SHACL相当)
+├── fukurow-engine          # 🧠 推論オーケストレーション
+├── fukurow-domain-cyber    # 🔒 サイバー防御ドメインルール群
+├── fukurow-api             # 🌐 RESTful Web API
+└── fukurow-cli             # 💻 コマンドラインインターフェース
 ```
 
 ## ⚙️ fukurow-store: RDF Store設計
@@ -75,7 +114,12 @@ pub enum Provenance {
 - Rust 1.70+
 - Cargo
 
-### Installation
+### Installation (via crates.io)
+```bash
+cargo add fukurow
+```
+
+### From source
 ```bash
 git clone https://github.com/com-junkawasaki/fukurow
 cd fukurow
@@ -88,23 +132,23 @@ cargo build --release
 cargo test
 
 # Run tests for specific crate
-cargo test -p reasoner-core
-cargo test -p rules-cyber
+cargo test -p fukurow-core
+cargo test -p fukurow-domain-cyber
 ```
 
 ### CLI Usage
 ```bash
 # Start API server
-cargo run --bin reasoner-cli -- serve
+cargo run --bin fukurow-cli -- serve
 
 # Analyze single event
-cargo run --bin reasoner-cli -- analyze --json '{"type": "NetworkConnection", "source_ip": "192.168.1.10", "dest_ip": "192.168.1.100"}'
+cargo run --bin fukurow-cli -- analyze --json '{"type": "NetworkConnection", "source_ip": "192.168.1.10", "dest_ip": "192.168.1.100"}'
 
 # Process events from file
-cargo run --bin reasoner-cli -- process --input events.json --output results.json
+cargo run --bin fukurow-cli -- process --input events.json --output results.json
 
 # Interactive mode
-cargo run --bin reasoner-cli
+cargo run --bin fukurow-cli
 ```
 
 ### API Usage
@@ -134,7 +178,7 @@ curl -X POST http://localhost:3000/reason \
           └──────────┬───────────┘
                      │
           ┌─────────────────────┐
-          │  Reasoner Core      │
+          │  Fukurow Core       │
           │                     │
           │ • Rule Engine       │
           │ • Inference Logic   │
@@ -185,7 +229,7 @@ cargo build
 cargo build --release
 
 # Build specific crate
-cargo build -p reasoner-cli
+cargo build -p fukurow-cli
 ```
 
 ### Testing
@@ -194,7 +238,7 @@ cargo build -p reasoner-cli
 cargo test
 
 # Run tests for specific crate
-cargo test -p reasoner-core
+cargo test -p fukurow-core
 
 # Run with coverage (requires tarpaulin)
 cargo tarpaulin
