@@ -1,13 +1,10 @@
 [workspace]
 members = [
-    "crates/fukurow",
     "crates/fukurow-core",
     "crates/fukurow-store",
     "crates/fukurow-rules",
     "crates/fukurow-engine",
-    "crates/fukurow-domain-cyber",
-    "crates/fukurow-api",
-    "crates/fukurow-cli",
+    "crates/fukurow-domain-cyber"
 ]
 resolver = "2"
 
