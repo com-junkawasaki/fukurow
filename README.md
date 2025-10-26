@@ -12,20 +12,50 @@
 目的: 推論・検証・クエリ・アクション提案までを統合し、リアルタイムサイバー防御に利用できる形にする。
 高速推論エンジンと監査可能な知識ストアを Rust で統合。
 
-## 🧩 全体Crate構成
+## 🦉 Fukurow Unified Crate
+
+Fukurowの全機能を統合したメインcrateです。簡単な導入で全ての機能を活用できます。
+
+```bash
+cargo add fukurow
+```
+
+```rust
+use fukurow::prelude::*;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut engine = ReasonerEngine::new();
+
+    let event = CyberEvent::NetworkConnection {
+        source_ip: "192.168.1.100".to_string(),
+        dest_ip: "10.0.0.1".to_string(),
+        port: 443,
+        protocol: "TCP".to_string(),
+        timestamp: chrono::Utc::now().timestamp(),
+    };
+
+    engine.add_event(event).await?;
+    let actions = engine.reason().await?;
+
+    println!("Generated {} actions", actions.len());
+    Ok(())
+}
+```
+
+## 🧩 モジュラーアーキテクチャ
+
+Fukurowは以下の専門化されたcrateから構成されます：
 
 ```
-fukurow/
-├── fukurow-core            // RDF/JSON-LDコアデータモデル
-├── fukurow-store           // RDF Store + provenance付きTriple管理
-├── fukurow-sparql          // SPARQLクエリパーサと実行エンジン
-├── fukurow-gqlld           // GraphQL-LDクエリ → SPARQL変換
-├── fukurow-rdfs            // RDFSレベル推論
-├── fukurow-lite            // OWL Lite相当の推論
-├── fukurow-dl              // OWL DL相当の整合性・同定推論
-├── fukurow-rules           // ルールトレイトと制約検証(SHACL相当)
-├── fukurow-engine          // 推論オーケストレーション
-└── fukurow-domain-cyber    // サイバー防御ドメインルール群
+fukurow/                     # 🦉 統合メインcrate
+├── fukurow-core            # 📊 RDF/JSON-LDコアデータモデル
+├── fukurow-store           # 💾 RDF Store + provenance付きTriple管理
+├── fukurow-rules           # 🛡️ ルールトレイトと制約検証(SHACL相当)
+├── fukurow-engine          # 🧠 推論オーケストレーション
+├── fukurow-domain-cyber    # 🔒 サイバー防御ドメインルール群
+├── fukurow-api             # 🌐 RESTful Web API
+└── fukurow-cli             # 💻 コマンドラインインターフェース
 ```
 
 ## ⚙️ fukurow-store: RDF Store設計

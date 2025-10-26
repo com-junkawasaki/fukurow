@@ -1,0 +1,50 @@
+[package]
+name = "fukurow"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Fukurow - Unified Rust Reasoning & Knowledge Graph Stack. JSON-LD/RDF/OWL/SPARQL/GraphQL-LD based knowledge processing stack with fast inference engine and auditable knowledge store."
+keywords = ["rdf", "json-ld", "reasoning", "knowledge-graph", "cyber-security", "semantic-web", "owl", "sparql"]
+categories = ["database", "web-programming", "science", "api-bindings"]
+
+[dependencies]
+# Core crates (all optional for feature gating)
+fukurow-core = { path = "../fukurow-core", optional = true }
+fukurow-store = { path = "../fukurow-store", optional = true }
+fukurow-rules = { path = "../fukurow-rules", optional = true }
+fukurow-engine = { path = "../fukurow-engine", optional = true }
+fukurow-domain-cyber = { path = "../fukurow-domain-cyber", optional = true }
+fukurow-api = { path = "../fukurow-api", optional = true }
+fukurow-cli = { path = "../fukurow-cli", optional = true }
+
+# Re-export commonly used external dependencies for convenience
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
+
+[features]
+default = ["full"]
+full = [
+    "fukurow-core",
+    "fukurow-store",
+    "fukurow-rules",
+    "fukurow-engine",
+    "fukurow-domain-cyber",
+    "fukurow-api",
+    "fukurow-cli"
+]
+core = ["fukurow-core"]
+store = ["fukurow-store"]
+rules = ["fukurow-rules"]
+engine = ["fukurow-engine"]
+cyber = ["fukurow-domain-cyber"]
+api = ["fukurow-api"]
+cli = ["fukurow-cli"]
+
+# WebAssembly support (only for compatible crates)
+wasm = ["fukurow-core/wasm-bindgen"]
