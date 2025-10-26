@@ -9,6 +9,7 @@ members = [
     "crates/fukurow-rdfs",
     "crates/fukurow-lite",
     "crates/fukurow-dl",
+    "crates/fukurow-wasm",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",
     "crates/fukurow-api",
@@ -45,7 +46,11 @@ tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
+getrandom = { version = "0.3", features = ["wasm_js"] }
 fukurow-lite = { path = "crates/fukurow-lite", version = "0.1.0" }
+fukurow-core = { path = "crates/fukurow-core", version = "0.1.0" }
+fukurow-store = { path = "crates/fukurow-store", version = "0.1.0" }
+fukurow-dl = { path = "crates/fukurow-dl", version = "0.1.0" }
 
 # JSON-LD and RDF processing
 json-ld = "0.16"
@@ -55,6 +60,9 @@ sophia = { version = "0.8", features = ["jsonld", "xml"] }
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# WebAssembly
+console_error_panic_hook = "0.1.6"
 
 # Logging
 tracing = "0.1"

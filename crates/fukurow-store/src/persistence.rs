@@ -5,13 +5,15 @@ use crate::provenance::{GraphId, Provenance};
 use fukurow_core::model::Triple;
 use anyhow::Result;
 use std::path::Path;
+use crate::adapter::{StoreAdapter};
+use crate::adapter::sqlite::SqliteAdapter;
 
 /// Persistence backend types
 pub enum PersistenceBackend {
     /// In-memory only (no persistence)
     Memory,
-    /// SQLite-based persistence
-    Sqlite { path: String },
+    /// SQLite-based persistence (file or libsql URL)
+    Sqlite { url: String },
     /// Sled-based persistence (future)
     Sled { path: String },
 }
@@ -34,8 +36,9 @@ impl PersistenceManager {
                 // No-op for memory backend
                 Ok(())
             }
-            PersistenceBackend::Sqlite { path } => {
-                self.save_to_sqlite(store, path).await
+            PersistenceBackend::Sqlite { url } => {
+                let adapter = SqliteAdapter::new(url).await?;
+                adapter.save_store(store).await
             }
             PersistenceBackend::Sled { path } => {
                 // TODO: Implement sled persistence
@@ -50,25 +53,15 @@ impl PersistenceManager {
             PersistenceBackend::Memory => {
                 Ok(RdfStore::new())
             }
-            PersistenceBackend::Sqlite { path } => {
-                self.load_from_sqlite(path).await
+            PersistenceBackend::Sqlite { url } => {
+                let adapter = SqliteAdapter::new(url).await?;
+                adapter.load_store().await
             }
             PersistenceBackend::Sled { path } => {
                 // TODO: Implement sled persistence
                 Err(anyhow::anyhow!("Sled backend not implemented yet"))
             }
         }
-    }
-
-    async fn save_to_sqlite(&self, store: &RdfStore, path: &str) -> Result<()> {
-        // TODO: Implement SQLite persistence
-        // This would create tables for triples, provenance, and audit trail
-        Err(anyhow::anyhow!("SQLite persistence not implemented yet"))
-    }
-
-    async fn load_from_sqlite(&self, path: &str) -> Result<RdfStore> {
-        // TODO: Implement SQLite loading
-        Err(anyhow::anyhow!("SQLite loading not implemented yet"))
     }
 }
 

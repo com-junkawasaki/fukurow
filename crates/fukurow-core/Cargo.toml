@@ -17,15 +17,13 @@ thiserror.workspace = true
 sophia.workspace = true
 json-ld.workspace = true
 iri-string = "0.7"
-uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
 wasm-bindgen = { workspace = true, optional = true }
 
 [features]
-default = []
-wasm-bindgen = ["dep:wasm-bindgen", "uuid/js", "getrandom/js"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+default = ["uuid"]
+wasm-bindgen = ["dep:wasm-bindgen"]
+no-uuid = []
 
 [dev-dependencies]
 proptest.workspace = true

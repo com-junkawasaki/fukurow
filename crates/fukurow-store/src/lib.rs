@@ -12,6 +12,7 @@ use uuid::Uuid;
 pub mod store;
 pub mod provenance;
 pub mod persistence;
+pub mod adapter;
 
 pub use store::*;
 pub use provenance::*;

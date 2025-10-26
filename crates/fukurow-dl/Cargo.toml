@@ -9,14 +9,19 @@ keywords = ["owl", "dl", "reasoning", "tableau", "description-logics"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
-fukurow-core = "0.1.0"
-fukurow-store = "0.1.0"
-fukurow-lite.workspace = true
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
+fukurow-lite = { path = "../fukurow-lite" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
+wasm-bindgen = { workspace = true, optional = true }
+
+[features]
+default = []
+wasm-bindgen = ["dep:wasm-bindgen", "fukurow-core/wasm-bindgen", "fukurow-store/wasm-bindgen", "fukurow-lite/wasm-bindgen"]
 
 [dev-dependencies]
 criterion = "0.5"

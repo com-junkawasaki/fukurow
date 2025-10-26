@@ -1,0 +1,45 @@
+[package]
+name = "fukurow-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WebAssembly bindings for Fukurow reasoning engine (browser integration)"
+keywords = ["wasm", "webassembly", "browser", "reasoning", "owl"]
+categories = ["wasm", "api-bindings"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+fukurow-core = { path = "../fukurow-core", default-features = false, features = ["no-uuid"] }
+fukurow-store = { path = "../fukurow-store" }
+fukurow-lite = { path = "../fukurow-lite" }
+fukurow-dl = { path = "../fukurow-dl" }
+wasm-bindgen = { workspace = true, features = ["serde-serialize"] }
+web-sys = { workspace = true, features = [
+  "console",
+  "Window",
+  "Document",
+  "Element",
+  "HtmlElement",
+  "HtmlCanvasElement",
+  "Node",
+  "CanvasRenderingContext2d",
+  "ImageData",
+] }
+js-sys.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+console_error_panic_hook = { workspace = true, optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+console_error_panic_hook = ["dep:console_error_panic_hook"]
+wee_alloc = ["dep:wee_alloc"]
+
+[dependencies.wee_alloc]
+version = "0.4.5"
+optional = true
