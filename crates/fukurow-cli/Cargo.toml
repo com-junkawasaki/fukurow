@@ -5,13 +5,16 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "Command-line interface for Fukurow reasoning and knowledge graph operations"
+keywords = ["cli", "command-line", "reasoning", "knowledge-graph", "tool"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
-fukurow-store = { path = "../fukurow-store" }
-fukurow-engine = { path = "../fukurow-engine" }
-fukurow-domain-cyber = { path = "../fukurow-domain-cyber" }
-fukurow-api = { path = "../fukurow-api" }
+fukurow-core = "0.1.0"
+fukurow-store = "0.1.0"
+fukurow-engine = "0.1.0"
+fukurow-domain-cyber = "0.1.0"
+fukurow-api = "0.1.0"
 clap = { version = "4.0", features = ["derive"] }
 serde.workspace = true
 serde_json.workspace = true
