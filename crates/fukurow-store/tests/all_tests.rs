@@ -691,4 +691,203 @@ mod persistence_tests {
         assert_eq!(loaded.statistics().total_triples, 0);
         assert_eq!(loaded.statistics().graph_count, 0);
     }
+
+    #[tokio::test]
+    async fn test_sqlite_adapter_creation() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let db_path = format!("sqlite://{}", temp_file.path().to_str().unwrap());
+
+        let adapter = fukurow_store::SqliteAdapter::new(&db_path).await;
+        assert!(adapter.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_sqlite_adapter_save_load_empty_store() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let db_path = format!("sqlite://{}", temp_file.path().to_str().unwrap());
+
+        let adapter = fukurow_store::SqliteAdapter::new(&db_path).await.unwrap();
+        let store = fukurow_store::RdfStore::new();
+
+        // Save empty store
+        adapter.save_store(&store).await.unwrap();
+
+        // Load empty store
+        let loaded = adapter.load_store().await.unwrap();
+        assert_eq!(loaded.statistics().total_triples, 0);
+        assert_eq!(loaded.statistics().graph_count, 0);
+    }
+
+    #[tokio::test]
+    async fn test_sqlite_adapter_save_load_with_data() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let db_path = format!("sqlite://{}", temp_file.path().to_str().unwrap());
+
+        let adapter = fukurow_store::SqliteAdapter::new(&db_path).await.unwrap();
+
+        // Create store with data
+        let mut store = fukurow_store::RdfStore::new();
+        let triple1 = Triple {
+            subject: "http://example.org/subject1".to_string(),
+            predicate: "http://example.org/predicate1".to_string(),
+            object: "http://example.org/object1".to_string(),
+        };
+        let triple2 = Triple {
+            subject: "http://example.org/subject2".to_string(),
+            predicate: "http://example.org/predicate2".to_string(),
+            object: "http://example.org/object2".to_string(),
+        };
+
+        store.insert(triple1.clone(), fukurow_store::GraphId::Default, fukurow_store::Provenance::Sensor {
+            source: "test_sensor".to_string(),
+            confidence: Some(0.8),
+        });
+        store.insert(triple2.clone(), fukurow_store::GraphId::Named("named_graph".to_string()), fukurow_store::Provenance::Inferred {
+            rule: "test_rule".to_string(),
+            reasoning_level: "rdfs".to_string(),
+            evidence: vec!["evidence1".to_string()],
+        });
+
+        // Save store
+        adapter.save_store(&store).await.unwrap();
+
+        // Load store
+        let loaded = adapter.load_store().await.unwrap();
+
+        // Verify data
+        assert_eq!(loaded.statistics().total_triples, 2);
+        assert_eq!(loaded.statistics().graph_count, 2);
+
+        // Check default graph
+        let default_triples = loaded.find_triples(Some("http://example.org/subject1"), None, None);
+        assert_eq!(default_triples.len(), 1);
+        assert_eq!(default_triples[0].triple, triple1);
+        match &default_triples[0].provenance {
+            fukurow_store::Provenance::Sensor { source, confidence } => {
+                assert_eq!(source, "test_sensor");
+                assert_eq!(*confidence, Some(0.8));
+            }
+            _ => panic!("Expected Sensor provenance"),
+        }
+
+        // Check named graph
+        let named_triples = loaded.find_triples(Some("http://example.org/subject2"), None, None);
+        assert_eq!(named_triples.len(), 1);
+        assert_eq!(named_triples[0].triple, triple2);
+        match &named_triples[0].provenance {
+            fukurow_store::Provenance::Inferred { rule, reasoning_level, evidence } => {
+                assert_eq!(rule, "test_rule");
+                assert_eq!(reasoning_level, "rdfs");
+                assert_eq!(evidence, &vec!["evidence1".to_string()]);
+            }
+            _ => panic!("Expected Inferred provenance"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_sqlite_adapter_overwrite_data() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let db_path = format!("sqlite://{}", temp_file.path().to_str().unwrap());
+
+        let adapter = fukurow_store::SqliteAdapter::new(&db_path).await.unwrap();
+
+        // Save initial data
+        let mut store1 = fukurow_store::RdfStore::new();
+        store1.insert(Triple {
+            subject: "s1".to_string(),
+            predicate: "p1".to_string(),
+            object: "o1".to_string(),
+        }, fukurow_store::GraphId::Default, fukurow_store::Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: None,
+        });
+        adapter.save_store(&store1).await.unwrap();
+
+        // Save different data (should overwrite)
+        let mut store2 = fukurow_store::RdfStore::new();
+        store2.insert(Triple {
+            subject: "s2".to_string(),
+            predicate: "p2".to_string(),
+            object: "o2".to_string(),
+        }, fukurow_store::GraphId::Default, fukurow_store::Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: None,
+        });
+        adapter.save_store(&store2).await.unwrap();
+
+        // Load and verify only new data exists
+        let loaded = adapter.load_store().await.unwrap();
+        assert_eq!(loaded.statistics().total_triples, 1);
+
+        let results = loaded.find_triples(Some("s2"), Some("p2"), Some("o2"));
+        assert_eq!(results.len(), 1);
+
+        let results_old = loaded.find_triples(Some("s1"), None, None);
+        assert_eq!(results_old.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_sqlite_adapter_multiple_graph_types() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let db_path = format!("sqlite://{}", temp_file.path().to_str().unwrap());
+
+        let adapter = fukurow_store::SqliteAdapter::new(&db_path).await.unwrap();
+
+        let mut store = fukurow_store::RdfStore::new();
+
+        // Add triples to all graph types
+        let graphs = vec![
+            fukurow_store::GraphId::Default,
+            fukurow_store::GraphId::Named("named".to_string()),
+            fukurow_store::GraphId::Sensor("sensor".to_string()),
+            fukurow_store::GraphId::Inferred("rule".to_string()),
+        ];
+
+        for (i, graph_id) in graphs.into_iter().enumerate() {
+            let triple = Triple {
+                subject: format!("subject{}", i),
+                predicate: format!("predicate{}", i),
+                object: format!("object{}", i),
+            };
+            store.insert(triple, graph_id, fukurow_store::Provenance::Sensor {
+                source: "test".to_string(),
+                confidence: None,
+            });
+        }
+
+        // Save and load
+        adapter.save_store(&store).await.unwrap();
+        let loaded = adapter.load_store().await.unwrap();
+
+        assert_eq!(loaded.statistics().total_triples, 4);
+        assert_eq!(loaded.statistics().graph_count, 4);
+
+        // Verify all graph IDs exist
+        let graph_ids = loaded.graph_ids();
+        assert_eq!(graph_ids.len(), 4);
+        assert!(graph_ids.contains(&&fukurow_store::GraphId::Default));
+        assert!(graph_ids.contains(&&fukurow_store::GraphId::Named("named".to_string())));
+        assert!(graph_ids.contains(&&fukurow_store::GraphId::Sensor("sensor".to_string())));
+        assert!(graph_ids.contains(&&fukurow_store::GraphId::Inferred("rule".to_string())));
+    }
+
+    #[tokio::test]
+    async fn test_sqlite_adapter_schema_creation() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let db_path = format!("sqlite://{}", temp_file.path().to_str().unwrap());
+
+        // First adapter creation should create schema
+        let adapter1 = fukurow_store::SqliteAdapter::new(&db_path).await.unwrap();
+
+        // Second adapter creation should reuse existing schema
+        let adapter2 = fukurow_store::SqliteAdapter::new(&db_path).await.unwrap();
+
+        // Both should work
+        let store = fukurow_store::RdfStore::new();
+        adapter1.save_store(&store).await.unwrap();
+        adapter2.save_store(&store).await.unwrap();
+
+        let loaded = adapter2.load_store().await.unwrap();
+        assert_eq!(loaded.statistics().total_triples, 0);
+    }
 }
