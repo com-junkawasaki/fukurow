@@ -92,7 +92,11 @@ pub fn cyber_event_to_jsonld(event: &CyberEvent) -> Result<JsonLdDocument> {
 
     let mut event_node = data.as_object().unwrap().clone();
     event_node.insert("@type".to_string(), serde_json::Value::String(event_type.to_string()));
-    event_node.insert("@id".to_string(), serde_json::Value::String(format!("_:event_{}", uuid::Uuid::new_v4())));
+    #[cfg(feature = "uuid")]
+    let event_id = format!("_:event_{}", uuid::Uuid::new_v4());
+    #[cfg(not(feature = "uuid"))]
+    let event_id = "_:event_static".to_string();
+    event_node.insert("@id".to_string(), serde_json::Value::String(event_id));
 
     Ok(JsonLdDocument {
         context,
