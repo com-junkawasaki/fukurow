@@ -17,6 +17,7 @@ fukurow-store = { path = "../fukurow-store", optional = true }
 fukurow-rules = { path = "../fukurow-rules", optional = true }
 fukurow-sparql = { path = "../fukurow-sparql", optional = true }
 fukurow-shacl = { path = "../fukurow-shacl", optional = true }
+fukurow-rdfs = { path = "../fukurow-rdfs", optional = true }
 fukurow-engine = { path = "../fukurow-engine", optional = true }
 fukurow-domain-cyber = { path = "../fukurow-domain-cyber", optional = true }
 fukurow-api = { path = "../fukurow-api", optional = true }
@@ -38,6 +39,7 @@ full = [
     "fukurow-rules",
     "fukurow-sparql",
     "fukurow-shacl",
+    "fukurow-rdfs",
     "fukurow-engine",
     "fukurow-domain-cyber",
     "fukurow-api",
@@ -48,6 +50,7 @@ store = ["fukurow-store"]
 rules = ["fukurow-rules"]
 sparql = ["fukurow-sparql"]
 shacl = ["fukurow-shacl"]
+rdfs = ["fukurow-rdfs"]
 engine = ["fukurow-engine"]
 cyber = ["fukurow-domain-cyber"]
 api = ["fukurow-api"]

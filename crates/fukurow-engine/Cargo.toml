@@ -10,9 +10,10 @@ keywords = ["reasoning", "inference", "engine", "orchestration", "knowledge-grap
 categories = ["algorithms", "concurrency"]
 
 [dependencies]
-fukurow-core = "0.1.0"
-fukurow-store = "0.1.0"
-fukurow-rules = "0.1.0"
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
+fukurow-rules = { path = "../fukurow-rules" }
+fukurow-rdfs = { path = "../fukurow-rdfs" }
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true

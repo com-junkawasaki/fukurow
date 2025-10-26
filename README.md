@@ -18,30 +18,36 @@
 
 | コンポーネント | 完成度 | ステータス |
 |--------------|--------|-----------|
-| **OWL推論** | 20% | 計画段階 (RDFS/OWL Lite/OWL DL) |
+| **OWL推論** | 30% | RDFS実装完了、OWL Lite/DL計画中 |
 | **SPARQL 1.1** | 40% | 実装骨格完了、準拠テスト残 |
 | **SHACL Core** | 60% | 検証エンジン実装、W3Cスイート統合残 |
 | **RDF/JSON-LD** | 80% | 安定運用可 |
-| **推論エンジン** | 70% | パイプライン完備 |
+| **推論エンジン** | 75% | パイプライン完備、RDFS統合済み |
 | **サイバー防御** | 70% | 検出器実装済み |
 | **API/CLI** | 70% | 主要機能完備 |
 | **運用基盤** | 60% | CI/CD・配布設定済み |
 
-**総合完成度: 60%** | **実運用準備度: 50%**
+**総合完成度: 65%** | **実運用準備度: 55%**
 
-## 🦉 OWL Support (20%)
+## 🦉 OWL Support (30%)
 
 OWL (Web Ontology Language) 推論の実装状況:
 
+### ✅ 実装済み: RDFS推論
+- **fukurow-rdfs**: RDFSレベルの推論エンジン
+  - rdfs:subClassOf の推移的閉包
+  - rdfs:subPropertyOf の推移的閉包
+  - rdfs:domain と rdfs:range による型推論
+  - rdf:type 推論と階層的型伝播
+
 ### 計画中のOWL実装
-- **fukurow-rdfs**: RDFSレベルの推論 (subClassOf, subPropertyOf, domain, range)
-- **fukurow-lite**: OWL Lite相当の推論
+- **fukurow-lite**: OWL Lite相当の推論 (テーブルローアルゴリズム)
 - **fukurow-dl**: OWL DL相当の完全推論
 
 ### 現状
 - OWL語彙の認識: ✅ (RDF/XML, Turtle, JSON-LD)
-- 基本的なクラス階層: ✅ (rdfs:subClassOf)
-- プロパティ制約: 🚧 (domain, range の基本実装)
+- RDFS完全推論: ✅ (subClassOf, subPropertyOf, domain, range)
+- 推論エンジン統合: ✅ (ReasoningEngine に RDFS ステップ追加)
 
 ## 🔍 SPARQL Support (40%)
 

@@ -6,6 +6,7 @@ members = [
     "crates/fukurow-rules",
     "crates/fukurow-sparql",
     "crates/fukurow-shacl",
+    "crates/fukurow-rdfs",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",
     "crates/fukurow-api",

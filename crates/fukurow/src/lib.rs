@@ -87,6 +87,9 @@ pub use fukurow_sparql as sparql;
 #[cfg(feature = "fukurow-shacl")]
 pub use fukurow_shacl as shacl;
 
+#[cfg(feature = "fukurow-rdfs")]
+pub use fukurow_rdfs as rdfs;
+
 #[cfg(feature = "fukurow-engine")]
 pub use fukurow_engine as engine;
 
@@ -151,6 +154,9 @@ pub mod prelude {
 
     #[cfg(feature = "fukurow-shacl")]
     pub use fukurow_shacl::{ShaclLoader, ShaclValidator, ValidationReport};
+
+    #[cfg(feature = "fukurow-rdfs")]
+    pub use fukurow_rdfs::{RdfsReasoner, RdfsConfig};
 
     #[cfg(feature = "fukurow-domain-cyber")]
     pub use crate::ThreatProcessor;

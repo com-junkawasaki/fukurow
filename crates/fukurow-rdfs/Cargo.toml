@@ -1,0 +1,24 @@
+[package]
+name = "fukurow-rdfs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "RDFS inference engine for Fukurow (subClassOf, subPropertyOf, domain, range)"
+keywords = ["rdfs", "rdf", "inference", "reasoning", "owl"]
+categories = ["algorithms", "database"]
+
+[dependencies]
+fukurow-core = "0.1.0"
+fukurow-store = "0.1.0"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "rdfs_benchmark"
+harness = false

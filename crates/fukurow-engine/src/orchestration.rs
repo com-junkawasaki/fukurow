@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use fukurow_core::model::{Triple, SecurityAction};
 use fukurow_store::store::RdfStore;
 use fukurow_rules::{Rule, RuleResult, RuleRegistry};
+use fukurow_rdfs::{RdfsReasoner, RdfsConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -40,7 +41,9 @@ pub struct ProcessingOptions {
     pub max_iterations: usize,
     pub enable_validation: bool,
     pub enable_inference: bool,
+    pub enable_rdfs_inference: bool,
     pub timeout_ms: Option<u64>,
+    pub rdfs_config: RdfsConfig,
 }
 
 impl ReasoningEngine {
@@ -78,6 +81,14 @@ impl ReasoningEngine {
                 memory_used_kb: None,
             },
         };
+
+        // RDFS inference (first step)
+        if self.processing_options.enable_rdfs_inference {
+            let mut rdfs_reasoner = RdfsReasoner::new();
+            let rdfs_triples = rdfs_reasoner.compute_closure(store)?;
+            result.inferred_triples.extend(rdfs_triples);
+            result.stats.rules_applied += 1; // Count RDFS as one "rule"
+        }
 
         // Apply all rules
         if self.processing_options.enable_inference {
@@ -135,7 +146,9 @@ impl Default for ProcessingOptions {
             max_iterations: 10,
             enable_validation: true,
             enable_inference: true,
+            enable_rdfs_inference: true, // RDFS推論をデフォルトで有効化
             timeout_ms: Some(5000), // 5 seconds
+            rdfs_config: RdfsConfig::default(),
         }
     }
 }
