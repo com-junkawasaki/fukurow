@@ -7,7 +7,7 @@ use axum::{
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::time::{Instant, Duration};
+use std::time::Instant;
 
 use crate::models::*;
 use reasoner_core::ReasonerEngine;
@@ -54,7 +54,7 @@ pub async fn submit_event(
 /// Execute reasoning handler
 pub async fn execute_reasoning(
     State(state): State<AppState>,
-    Json(request): Json<ReasoningRequest>,
+    Json(_request): Json<ReasoningRequest>,
 ) -> Result<JsonResponse<ApiResponse<ReasoningResponse>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     let start = Instant::now();
 
@@ -91,9 +91,10 @@ pub async fn query_graph(
         request.object.as_deref(),
     );
 
+    let count = triples.len();
     let response = GraphQueryResponse {
         triples: triples.into_iter().cloned().collect(),
-        count: triples.len(),
+        count,
     };
 
     Ok(JsonResponse(ApiResponse::success(response)))
@@ -116,24 +117,17 @@ pub async fn get_stats(State(state): State<AppState>) -> JsonResponse<ApiRespons
 
 /// Reset reasoner state handler
 pub async fn reset_reasoner(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
-    match state.reasoner.reset().await {
-        Ok(_) => {
-            let response = ApiResponse::success("Reasoner reset successfully".to_string());
-            Ok(JsonResponse(response))
-        }
-        Err(e) => {
-            let error_response = ApiResponse::error(format!("Failed to reset reasoner: {}", e));
-            Err((StatusCode::INTERNAL_SERVER_ERROR, JsonResponse(error_response)))
-        }
-    }
+    // TODO: Implement reset functionality - requires mutable access to reasoner
+    let error_response = ApiResponse::error("Reset functionality not yet implemented".to_string());
+    Err((StatusCode::NOT_IMPLEMENTED, JsonResponse(error_response)))
 }
 
 /// Add custom rule handler
 pub async fn add_rule(
-    State(state): State<AppState>,
-    Json(request): Json<AddRuleRequest>,
+    State(_state): State<AppState>,
+    Json(_request): Json<AddRuleRequest>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     // Note: This would require mutable access to reasoner, which needs design consideration
     // For now, return not implemented

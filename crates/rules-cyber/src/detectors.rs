@@ -1,7 +1,6 @@
 //! Cyber security threat detectors
 
 use reasoner_graph::model::{SecurityAction, CyberEvent, InferenceRule, Triple};
-use reasoner_graph::store::GraphStore;
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -98,7 +97,7 @@ impl LateralMovementDetector {
         }
 
         // Check for lateral movement patterns
-        for (user, sessions) in user_sessions {
+        for (user, mut sessions) in user_sessions {
             if sessions.len() >= 3 {
                 sessions.sort_by_key(|(_, ts)| *ts);
 

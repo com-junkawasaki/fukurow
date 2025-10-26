@@ -19,6 +19,7 @@ thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+shell-words = "1.0"
 
 [dev-dependencies]
 proptest.workspace = true

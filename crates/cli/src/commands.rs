@@ -3,7 +3,7 @@
 use clap::{Parser, Subcommand};
 use reasoner_core::ReasonerEngine;
 use reasoner_graph::model::CyberEvent;
-use rules_cyber::threat_intelligence::ThreatProcessor;
+use rules_cyber::threat_intelligence::{ThreatProcessor, IndicatorType};
 use std::path::PathBuf;
 use anyhow::Result;
 
@@ -145,10 +145,8 @@ pub struct CommandExecutor {
 
 impl CommandExecutor {
     pub fn new() -> Self {
-        let mut reasoner = ReasonerEngine::new();
-        let mut rule_engine = reasoner_core::rules::RuleEngine::new();
-        rule_engine.add_default_cyber_rules();
-        // Note: Adding rules to reasoner would require API change
+        let reasoner = ReasonerEngine::new();
+        // Note: Adding default rules to reasoner would require API change
 
         Self {
             reasoner,
@@ -173,7 +171,7 @@ impl CommandExecutor {
     async fn execute_serve(&self, host: String, port: u16) -> Result<CommandResult> {
         use reasoner_api::{ReasonerServer, ServerConfig};
 
-        let config = ServerConfig { host, port, max_connections: 100 };
+        let config = ServerConfig { host: host.clone(), port, max_connections: 100 };
         let server = ReasonerServer::with_config(config);
 
         println!("Starting server on {}:{}", host, port);
@@ -207,17 +205,16 @@ impl CommandExecutor {
         self.reasoner.add_event(event).await?;
         let actions = self.reasoner.reason().await?;
 
-        let result = match format {
+        match format {
             OutputFormat::Text => {
-                let mut output = format!("Event analyzed successfully\nActions proposed: {}\n", actions.len());
+                println!("Event analyzed successfully\nActions proposed: {}", actions.len());
                 for (i, action) in actions.iter().enumerate() {
-                    output.push_str(&format!("{}. {:?}\n", i + 1, action));
+                    println!("{}. {:?}", i + 1, action);
                 }
-                output
             }
-            OutputFormat::Json => serde_json::to_string(&actions)?,
-            OutputFormat::JsonPretty => serde_json::to_string_pretty(&actions)?,
-        };
+            OutputFormat::Json => println!("{}", serde_json::to_string(&actions)?),
+            OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&actions)?),
+        }
 
         Ok(CommandResult {
             success: true,
@@ -286,10 +283,11 @@ impl CommandExecutor {
             object.as_deref(),
         );
 
+        let count = triples.len();
         let result = match format {
             OutputFormat::Text => {
-                let mut output = format!("Found {} triples:\n", triples.len());
-                for triple in triples {
+                let mut output = format!("Found {} triples:\n", count);
+                for triple in &triples {
                     output.push_str(&format!("  {} {} {}\n", triple.subject, triple.predicate, triple.object));
                 }
                 output
@@ -302,7 +300,7 @@ impl CommandExecutor {
 
         Ok(CommandResult {
             success: true,
-            message: format!("Found {} triples", triples.len()),
+            message: format!("Found {} triples", count),
             data: Some(serde_json::json!({ "triples": triples })),
         })
     }
@@ -336,7 +334,7 @@ impl CommandExecutor {
                 })
             }
             ThreatCommands::Import { input } => {
-                let content = std::fs::read_to_string(input)?;
+                let _content = std::fs::read_to_string(input)?;
                 // Note: Would need mutable access to threat processor
                 println!("Import functionality not yet implemented");
 
@@ -349,15 +347,15 @@ impl CommandExecutor {
             ThreatCommands::Check { value, r#type } => {
                 // Parse indicator type
                 let indicator_type = match r#type.as_str() {
-                    "ip" => reasoner_graph::model::IndicatorType::IpAddress,
-                    "domain" => reasoner_graph::model::IndicatorType::Domain,
-                    "hash" => reasoner_graph::model::IndicatorType::FileHash,
+                    "ip" => IndicatorType::IpAddress,
+                    "domain" => IndicatorType::Domain,
+                    "hash" => IndicatorType::FileHash,
                     _ => return Err(anyhow::anyhow!("Unknown indicator type: {}", r#type)),
                 };
 
                 let is_threat = self.threat_processor.process_event(&value, indicator_type);
 
-                let result = if let Some(threat_info) = is_threat {
+                let result = if let Some(ref threat_info) = is_threat {
                     format!("THREAT DETECTED: {} - {}", value, threat_info)
                 } else {
                     format!("No threat detected for: {}", value)

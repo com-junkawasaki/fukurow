@@ -1,6 +1,6 @@
 //! Threat intelligence integration
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 /// Threat intelligence source
@@ -27,7 +27,7 @@ pub struct ThreatIndicator {
 }
 
 /// Type of threat indicator
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum IndicatorType {
     IpAddress,
     Domain,

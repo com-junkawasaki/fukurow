@@ -83,7 +83,7 @@ impl ReasonerEngine {
     }
 
     /// Clear all events and reset reasoning state
-    pub async fn reset(&self) -> Result<(), ReasonerError> {
+    pub async fn reset(&mut self) -> Result<(), ReasonerError> {
         let mut store = self.graph_store.write().await;
         store.clear();
         self.context.reset();

@@ -74,7 +74,7 @@ impl ReasonerServer {
     }
 
     /// Start the server
-    pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn serve(self) -> anyhow::Result<()> {
         let addr = self.address();
         let app = self.create_app();
 
@@ -92,7 +92,7 @@ impl ReasonerServer {
     }
 
     /// Run the server with graceful shutdown
-    pub async fn run_with_shutdown(self, shutdown_signal: impl std::future::Future<Output = ()>) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run_with_shutdown(self, shutdown_signal: impl std::future::Future<Output = ()> + Send + 'static) -> anyhow::Result<()> {
         let addr = self.address();
         let app = self.create_app();
 
@@ -104,6 +104,8 @@ impl ReasonerServer {
         let server = serve(listener, app);
         let graceful = server.with_graceful_shutdown(shutdown_signal);
 
+        // Note: Axum's WithGracefulShutdown doesn't implement Future directly
+        // This is a simplified version - in production, use proper graceful shutdown
         graceful.await.map_err(|e| {
             error!("Server error: {}", e);
             e.into()

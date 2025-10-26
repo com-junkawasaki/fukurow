@@ -20,6 +20,7 @@ thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
 proptest.workspace = true

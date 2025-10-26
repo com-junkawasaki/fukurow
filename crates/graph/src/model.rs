@@ -75,7 +75,7 @@ pub enum SecurityAction {
 }
 
 /// Inference rule for pattern matching
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InferenceRule {
     pub name: String,
     pub description: String,

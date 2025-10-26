@@ -1,7 +1,7 @@
 //! API route definitions
 
 use axum::{
-    routing::{get, post, put, delete},
+    routing::{get, post},
     Router,
 };
 use tower_http::cors::CorsLayer;

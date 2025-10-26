@@ -2,9 +2,7 @@
 
 use reasoner_graph::model::{InferenceRule, SecurityAction, Triple};
 use reasoner_graph::store::GraphStore;
-use reasoner_graph::query::{GraphQuery, var, const_val};
 use crate::inference::InferenceContext;
-use std::collections::HashMap;
 use anyhow::Result;
 
 /// Rule evaluation engine
@@ -35,7 +33,7 @@ impl RuleEngine {
         &self,
         store: &GraphStore,
         rule: &InferenceRule,
-        context: &InferenceContext,
+        _context: &InferenceContext,
     ) -> Result<Vec<SecurityAction>> {
         // Check if rule conditions are met
         if self.check_conditions(store, &rule.conditions) {

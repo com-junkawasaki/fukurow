@@ -1,6 +1,6 @@
 //! Interactive CLI mode
 
-use crate::commands::{CommandExecutor, Commands, Cli};
+use crate::commands::{CommandExecutor, Cli};
 use clap::Parser;
 use std::io::{self, Write};
 use anyhow::Result;
@@ -21,7 +21,7 @@ impl InteractiveSession {
     pub async fn run(&mut self) -> Result<()> {
         println!("Welcome to Reasoner CLI Interactive Mode");
         println!("Type 'help' for available commands, 'quit' to exit");
-        println!("=" .repeat(50));
+        println!("{}", "=".repeat(50));
 
         loop {
             print!("reasoner> ");
