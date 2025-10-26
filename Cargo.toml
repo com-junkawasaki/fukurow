@@ -5,8 +5,7 @@ members = [
     "crates/fukurow-rules",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",
-    "crates/fukurow-api",
-    "crates/fukurow-cli"
+    "crates/fukurow-api"
 ]
 resolver = "2"
 
