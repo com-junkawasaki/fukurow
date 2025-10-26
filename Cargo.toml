@@ -10,6 +10,7 @@ members = [
     "crates/fukurow-lite",
     "crates/fukurow-dl",
     "crates/fukurow-wasm",
+    "crates/fukurow-siem",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",
     "crates/fukurow-api",
@@ -47,10 +48,13 @@ futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 getrandom = { version = "0.3", features = ["wasm_js"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+base64 = "0.22"
 fukurow-lite = { path = "crates/fukurow-lite", version = "0.1.0" }
 fukurow-core = { path = "crates/fukurow-core", version = "0.1.0" }
 fukurow-store = { path = "crates/fukurow-store", version = "0.1.0" }
 fukurow-dl = { path = "crates/fukurow-dl", version = "0.1.0" }
+fukurow-siem = { path = "crates/fukurow-siem", version = "0.1.0" }
 
 # JSON-LD and RDF processing
 json-ld = "0.16"

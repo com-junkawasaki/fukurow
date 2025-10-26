@@ -7,6 +7,8 @@ use anyhow::Result;
 use std::path::Path;
 use crate::adapter::{StoreAdapter};
 use crate::adapter::sqlite::SqliteAdapter;
+#[cfg(feature = "turso")]
+use crate::adapter::turso::TursoAdapter;
 
 /// Persistence backend types
 pub enum PersistenceBackend {
@@ -14,6 +16,9 @@ pub enum PersistenceBackend {
     Memory,
     /// SQLite-based persistence (file or libsql URL)
     Sqlite { url: String },
+    /// Turso (libSQL) persistence
+    #[cfg(feature = "turso")]
+    Turso { url: String },
     /// Sled-based persistence (future)
     Sled { path: String },
 }
@@ -40,6 +45,11 @@ impl PersistenceManager {
                 let adapter = SqliteAdapter::new(url).await?;
                 adapter.save_store(store).await
             }
+            #[cfg(feature = "turso")]
+            PersistenceBackend::Turso { url } => {
+                let adapter = TursoAdapter::new(url.clone()).await?;
+                adapter.save_store(store).await
+            }
             PersistenceBackend::Sled { path } => {
                 // TODO: Implement sled persistence
                 Err(anyhow::anyhow!("Sled backend not implemented yet"))
@@ -55,6 +65,11 @@ impl PersistenceManager {
             }
             PersistenceBackend::Sqlite { url } => {
                 let adapter = SqliteAdapter::new(url).await?;
+                adapter.load_store().await
+            }
+            #[cfg(feature = "turso")]
+            PersistenceBackend::Turso { url } => {
+                let adapter = TursoAdapter::new(url.clone()).await?;
                 adapter.load_store().await
             }
             PersistenceBackend::Sled { path } => {
