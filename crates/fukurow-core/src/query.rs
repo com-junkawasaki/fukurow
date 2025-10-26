@@ -29,6 +29,11 @@ impl GraphQuery {
         }
     }
 
+    /// Get the number of patterns in this query
+    pub fn pattern_count(&self) -> usize {
+        self.patterns.len()
+    }
+
     pub fn where_clause(mut self, subject: PatternValue, predicate: PatternValue, object: PatternValue) -> Self {
         self.patterns.push(QueryPattern {
             subject,
