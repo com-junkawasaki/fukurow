@@ -1,0 +1,25 @@
+[package]
+name = "fukurow-lite"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OWL Lite reasoning engine for Fukurow (tableau algorithm implementation)"
+keywords = ["owl", "reasoning", "tableau", "ontology", "semantic-web"]
+categories = ["algorithms", "data-structures"]
+
+[dependencies]
+fukurow-core = "0.1.0"
+fukurow-store = "0.1.0"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "owl_lite_benchmark"
+harness = false
