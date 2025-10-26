@@ -4,7 +4,30 @@
 
   version: "1.0.0",
   name: "fukurow",
-  description: "JSON-LD / RDF / OWL / SPARQL / GraphQL-LD ベースの知識を処理する Rust スタック。高速推論エンジンと監査可能な知識ストアを統合。",
+  description: "OWLプロジェクト: JSON-LD / RDF / OWL / SPARQL / SHACL ベースの知識推論システム。サイバー防御のための高速推論エンジンと監査可能な知識ストア。",
+
+  // OWLプロジェクト完成度評価
+  owl_project_assessment: {
+    overall_completion: 60,
+    operational_readiness: 50,
+    components: {
+      owl_reasoning: { completion: 20, status: "planned", note: "RDFS/OWL Lite/OWL DL推論未実装" },
+      sparql_engine: { completion: 40, status: "partial", note: "Parser/Algebra/Optimizer実装済み、準拠テスト残" },
+      shacl_validator: { completion: 60, status: "partial", note: "Core制約検証実装、W3Cスイート統合残" },
+      rdf_jsonld: { completion: 80, status: "stable", note: "安定運用可" },
+      reasoning_engine: { completion: 70, status: "stable", note: "パイプライン完備" },
+      cyber_defense: { completion: 70, status: "stable", note: "検出器実装済み" },
+      api_cli: { completion: 70, status: "stable", note: "主要機能完備" },
+      operations: { completion: 60, status: "partial", note: "CI/CD・配布設定済み" },
+    },
+    risks: [
+      "SPARQL/SHACLのW3C準拠度（仕様解釈差）",
+      "OWL推論の計算量・停止性・性能評価",
+      "大規模グラフ時の結合順序・インデックス選択",
+      "WASMビルド・ブラウザAPI制約",
+      "crates.io公開順序・依存整合性"
+    ]
+  },
 
   // Merkle DAG Process Network Definition
   process_network: {
@@ -222,9 +245,25 @@
         status: "completed",
         timestamp: std.timeNow(),
         components: {
-          "fukurow-sparql": "SPARQL 1.1 parser, algebra, optimizer, evaluator",
-          "fukurow-shacl": "SHACL Core + SHACL-SPARQL validation engine",
+          "fukurow-sparql": "SPARQL 1.1 parser, algebra, optimizer, evaluator (40% complete)",
+          "fukurow-shacl": "SHACL Core + SHACL-SPARQL validation engine (60% complete)",
           "integration": "SPARQL-SHACL integration in fukurow-engine"
+        }
+      },
+
+      documentation_update: {
+        id: "documentation_update",
+        name: "Documentation Update for OWL Project",
+        type: "documentation",
+        description: "Update README and story.jsonnet to reflect OWL project completion assessment and roadmap",
+        dependencies: ["sparql_shacl_implementation"],
+        outputs: ["owl_project_readme", "updated_story_jsonnet", "completion_assessment"],
+        status: "completed",
+        timestamp: std.timeNow(),
+        components: {
+          "readme_update": "OWLプロジェクトとしての位置づけと完成度評価を反映",
+          "story_update": "OWLロードマップとフェーズ別タスクを明確化",
+          "assessment": "各コンポーネントの完成度を60%と評価"
         }
       },
     },
@@ -242,12 +281,13 @@
       { from: "testing", to: "build_optimization" },
       { from: "build_optimization", to: "deployment" },
         { from: "deployment", to: "sparql_shacl_implementation" },
-        { from: "sparql_shacl_implementation", to: "wasm_enablement" },
+        { from: "sparql_shacl_implementation", to: "documentation_update" },
+        { from: "documentation_update", to: "wasm_enablement" },
     ],
 
     // Current execution state
     execution_state: {
-      current_node: "sparql_shacl_implementation",
+      current_node: "documentation_update",
       completed_nodes: [
         "project_init",
         "graph_crate",
@@ -261,6 +301,7 @@
         "build_optimization",
         "deployment",
         "sparql_shacl_implementation",
+        "documentation_update",
       ],
       pending_nodes: ["wasm_enablement"],
       blocked_nodes: [],
@@ -359,21 +400,79 @@
     },
   },
 
-  // Future roadmap
+  // OWLプロジェクト ロードマップ
   roadmap: {
-    phase_1: "Core reasoning engine (current)",
-    phase_2: "WebAssembly compilation and browser deployment",
-    phase_3: "Persistent storage and distributed processing",
-    phase_4: "Machine learning integration",
-    phase_5: "SIEM platform integrations",
+    phase_1: "基盤強化 (2-4週間): SPARQL/SHACL準拠テスト、RDFS推論、性能最適化",
+    phase_2: "OWL Lite実装 (4-6週間): テーブルロー推論、健全性検証、パフォーマンス最適化",
+    phase_3: "OWL DL拡張 (6-8週間): 完全推論、計算量分析、大規模オントロジーテスト",
+    phase_4: "WebAssembly & 分散化 (8-12週間): ブラウザ対応、分散推論、ストリーミング処理",
+    phase_5: "エンタープライズ対応 (12-16週間): SIEM統合、ML異常検知、エンタープライズセキュリティ",
   },
 
-  // Success metrics
+  // フェーズ別詳細タスク
+  phase_tasks: {
+    phase_1_foundation: [
+      "SPARQL W3C準拠テスト実装 (主要カテゴリ90%+)",
+      "SHACL W3Cテストスイート統合",
+      "fukurow-rdfs: RDFS推論実装 (subClassOf, subPropertyOf, domain, range)",
+      "ストア統計実装 + 結合順序最適化",
+      "10kトリプル基準ベンチマーク作成"
+    ],
+    phase_2_owl_lite: [
+      "fukurow-lite: OWL Lite相当推論",
+      "テーブルロー推論アルゴリズム実装",
+      "健全性・停止性検証",
+      "パフォーマンス最適化 (p50<50ms, p95<150ms)",
+      "中規模オントロジーテスト (1k-10kトリプル)"
+    ],
+    phase_3_owl_dl: [
+      "fukurow-dl: OWL DL相当完全推論",
+      "計算量分析・最適化アルゴリズム",
+      "大規模オントロジーテスト (10k-100kトリプル)",
+      "メモリ使用量最適化",
+      "並列推論アルゴリズム検討"
+    ],
+    phase_4_wasm_distributed: [
+      "WebAssemblyコンパイル対応",
+      "ブラウザデモアプリケーション作成",
+      "分散推論アーキテクチャ設計",
+      "リアルタイムストリーミング処理",
+      "永続ストレージ統合 (PostgreSQL, Neo4j)"
+    ],
+    phase_5_enterprise: [
+      "SIEMプラットフォーム統合",
+      "高度ML異常検知",
+      "カスタムルールDSL",
+      "エンタープライズセキュリティコンプライアンス",
+      "運用監視・ログ分析"
+    ]
+  },
+
+  // OWLプロジェクト Success Metrics
   success_metrics: {
-    functionality: "100% cyber event type coverage",
-    performance: "Sub-100ms response times",
-    reliability: "99.9% uptime",
-    security: "Zero known vulnerabilities",
-    usability: "Intuitive CLI and API",
+    // OWL推論品質
+    rdfs_compliance: "規則セットの閉包完全性 (W3C RDFS仕様準拠)",
+    owl_lite_compliance: "テーブルロー推論の健全性・完全性",
+    owl_dl_compliance: "計算量分析済み・停止性保証",
+
+    // クエリ・検証品質
+    sparql_compliance: "W3C SPARQL 1.1 テスト90%+ (主要カテゴリ)",
+    shacl_compliance: "W3C SHACLテストスイート90%+",
+    rdf_compliance: "JSON-LD/Turtle/RDF/XML完全サポート",
+
+    // パフォーマンス指標
+    inference_performance: "10kトリプルでp50<50ms, p95<150ms",
+    query_performance: "BGP 3-5パターンで<10ms",
+    memory_efficiency: "<256MB/10kトリプル",
+
+    // サイバー防御機能
+    detection_accuracy: "脅威パターンカバレッジ95%+",
+    false_positive_rate: "<5% (運用データ検証済み)",
+    response_time: "<100ms/APIコール",
+
+    // 運用品質
+    reliability: "99.9% uptime, 障害時graceful degradation",
+    security: "Zero known vulnerabilities, 監査ログ完全性",
+    maintainability: "テストカバレッジ85%+, ドキュメント完備",
   },
 }

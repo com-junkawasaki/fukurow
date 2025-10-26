@@ -1,4 +1,4 @@
-# 🦉 Fukurow - Rust Reasoning & Knowledge Graph Stack
+# 🦉 Fukurow - OWL Reasoning Stack in Rust
 
 <p align="center">
   <img src="assets/026.png" alt="Fukurow Logo" width="200">
@@ -6,11 +6,82 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
+[![OWL Support](https://img.shields.io/badge/OWL-Support_20%25-yellow)](#owl-support)
+[![SPARQL](https://img.shields.io/badge/SPARQL-1.1-blue)](#sparql-support)
+[![SHACL](https://img.shields.io/badge/SHACL-Core-blue)](#shacl-support)
 
-**JSON-LD / RDF / OWL / SPARQL / GraphQL-LD** ベースの知識を処理する Rust スタック。
+**OWLプロジェクト**: JSON-LD / RDF / OWL / SPARQL / SHACL ベースの知識推論システム。
 
-目的: 推論・検証・クエリ・アクション提案までを統合し、リアルタイムサイバー防御に利用できる形にする。
-高速推論エンジンと監査可能な知識ストアを Rust で統合。
+目的: OWLの意味論をRustで実装し、サイバー防御のための高速推論エンジンと監査可能な知識ストアを提供。
+
+## 📊 プロジェクト完成度評価 (OWLプロジェクト観点)
+
+| コンポーネント | 完成度 | ステータス |
+|--------------|--------|-----------|
+| **OWL推論** | 20% | 計画段階 (RDFS/OWL Lite/OWL DL) |
+| **SPARQL 1.1** | 40% | 実装骨格完了、準拠テスト残 |
+| **SHACL Core** | 60% | 検証エンジン実装、W3Cスイート統合残 |
+| **RDF/JSON-LD** | 80% | 安定運用可 |
+| **推論エンジン** | 70% | パイプライン完備 |
+| **サイバー防御** | 70% | 検出器実装済み |
+| **API/CLI** | 70% | 主要機能完備 |
+| **運用基盤** | 60% | CI/CD・配布設定済み |
+
+**総合完成度: 60%** | **実運用準備度: 50%**
+
+## 🦉 OWL Support (20%)
+
+OWL (Web Ontology Language) 推論の実装状況:
+
+### 計画中のOWL実装
+- **fukurow-rdfs**: RDFSレベルの推論 (subClassOf, subPropertyOf, domain, range)
+- **fukurow-lite**: OWL Lite相当の推論
+- **fukurow-dl**: OWL DL相当の完全推論
+
+### 現状
+- OWL語彙の認識: ✅ (RDF/XML, Turtle, JSON-LD)
+- 基本的なクラス階層: ✅ (rdfs:subClassOf)
+- プロパティ制約: 🚧 (domain, range の基本実装)
+
+## 🔍 SPARQL Support (40%)
+
+SPARQL 1.1 クエリエンジンの実装状況:
+
+### ✅ 実装済み機能
+- **Parser**: SPARQL構文解析 (logos + winnow)
+- **Algebra**: 論理代数変換 (BGP, JOIN, UNION, FILTER, OPTIONAL)
+- **Optimizer**: クエリ最適化 (フィルタプッシュダウン)
+- **Evaluator**: 実行エンジン (SELECT, CONSTRUCT, ASK)
+
+### 🚧 開発中/未実装
+- プロパティパス (ZeroOrMore, OneOrMore, Alternative)
+- 集約関数 (COUNT, SUM, AVG, MIN, MAX)
+- ORDER BY / LIMIT / OFFSET
+- SERVICE (フェデレーテッドクエリ)
+
+### 🎯 次のステップ
+- W3C SPARQL 1.1 テストスイート準拠
+- プロパティパス完全実装
+- パフォーマンス最適化
+
+## ✅ SHACL Support (60%)
+
+SHACL Core + SHACL-SPARQL 検証エンジンの実装状況:
+
+### ✅ 実装済み機能
+- **Loader**: ShapesGraph読み込み (Turtle, JSON-LD, RDF Store)
+- **Validator**: SHACL Core制約検証エンジン
+- **Report**: JSON-LD検証レポート出力
+
+### ✅ サポートするSHACL Core制約
+- ターゲット指定: `targetClass`, `targetNode`, `targetSubjectsOf`, `targetObjectsOf`
+- Node Shapes: `class`, `datatype`, `nodeKind`, `hasValue`, `pattern`, `minLength`, `maxLength`
+- Property Shapes: `minCount`, `maxCount`, `qualified*`, `uniqueLang`
+
+### 🚧 開発中/未実装
+- Property Path評価
+- SHACL-SPARQL拡張制約
+- W3C SHACLテストスイート完全準拠
 
 ## 🦉 Fukurow Unified Crate
 
@@ -49,6 +120,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - fukurow-core
 - fukurow-store
 - fukurow-rules
+- fukurow-sparql ✨ **NEW**
+- fukurow-shacl ✨ **NEW**
 - fukurow-engine
 - fukurow-domain-cyber
 - fukurow-api
@@ -61,6 +134,8 @@ fukurow/                     # 🦉 統合メインcrate
 ├── fukurow-core            # 📊 RDF/JSON-LDコアデータモデル
 ├── fukurow-store           # 💾 RDF Store + provenance付きTriple管理
 ├── fukurow-rules           # 🛡️ ルールトレイトと制約検証(SHACL相当)
+├── fukurow-sparql          # 🔍 SPARQL 1.1 クエリエンジン ✨ NEW
+├── fukurow-shacl           # ✅ SHACL Core 検証エンジン ✨ NEW
 ├── fukurow-engine          # 🧠 推論オーケストレーション
 ├── fukurow-domain-cyber    # 🔒 サイバー防御ドメインルール群
 ├── fukurow-api             # 🌐 RESTful Web API
@@ -316,8 +391,55 @@ The system is configured via:
 - **Network**: Minimal I/O, efficient JSON-LD serialization
 - **Concurrency**: Async processing with Tokio runtime
 
-## Future Roadmap
+## 📈 Success Metrics (OWLプロジェクト基準)
 
+### OWL推論品質
+- **RDFS準拠**: 規則セットの閉包完全性 (W3C RDFS仕様準拠)
+- **OWL Lite準拠**: テーブルロー推論の健全性・完全性
+- **OWL DL準拠**: 計算量分析済み・停止性保証
+
+### クエリ・検証品質
+- **SPARQL準拠**: W3C SPARQL 1.1 テスト90%+ (主要カテゴリ)
+- **SHACL準拠**: W3C SHACLテストスイート90%+
+- **RDF準拠**: JSON-LD/Turtle/RDF/XML完全サポート
+
+### パフォーマンス指標
+- **推論性能**: 10kトリプルでp50<50ms, p95<150ms
+- **クエリ性能**: BGP 3-5パターンで<10ms
+- **メモリ効率**: <256MB/10kトリプル
+
+### サイバー防御機能
+- **検出精度**: 脅威パターンカバレッジ95%+
+- **誤検知率**: <5% (運用データ検証済み)
+- **応答時間**: <100ms/APIコール
+
+### 運用品質
+- **安定性**: 99.9% uptime, 障害時graceful degradation
+- **セキュリティ**: Zero known vulnerabilities, 監査ログ完全性
+- **保守性**: テストカバレッジ85%+, ドキュメント完備
+
+## 🛣️ OWLプロジェクト ロードマップ
+
+### Phase 1: 基盤強化 (2-4週間)
+- [x] SPARQL 1.1 基本実装 (Parser/Algebra/Optimizer/Evaluator)
+- [x] SHACL Core 検証エンジン実装
+- [ ] SPARQL W3C準拠テスト (主要カテゴリ90%+)
+- [ ] SHACL W3Cテストスイート統合
+- [ ] RDFS推論実装 (`fukurow-rdfs`)
+- [ ] ストア統計 + 結合順序最適化
+
+### Phase 2: OWL Lite 実装 (4-6週間)
+- [ ] OWL Lite相当推論 (`fukurow-lite`)
+- [ ] テーブルロー推論アルゴリズム
+- [ ] 健全性・停止性検証
+- [ ] パフォーマンス最適化 (10kトリプルでp50<50ms)
+
+### Phase 3: OWL DL 拡張 (6-8週間)
+- [ ] OWL DL相当完全推論 (`fukurow-dl`)
+- [ ] 計算量分析・最適化
+- [ ] 大規模オントロジーテスト
+
+### Phase 4: WebAssembly & 分散化 (8-12週間)
 - [ ] WebAssembly compilation for browser deployment
   - [ ] Expose `fukurow-core` to `wasm32-unknown-unknown` with `wasm-bindgen`
   - [ ] Add `wasm` feature flags for `fukurow-engine` and `fukurow-store`
@@ -330,11 +452,14 @@ The system is configured via:
   - [ ] Benchmarks in Web Worker; document perf trade-offs
 
 - [ ] Persistent graph storage (PostgreSQL, Neo4j)
-- [ ] Advanced ML-based anomaly detection
-- [ ] Real-time streaming event processing
 - [ ] Distributed reasoning across multiple nodes
+- [ ] Real-time streaming event processing
+
+### Phase 5: エンタープライズ対応 (12-16週間)
+- [ ] Advanced ML-based anomaly detection
 - [ ] Integration with SIEM platforms
 - [ ] Rule DSL for custom threat scenarios
+- [ ] Enterprise security compliance
 
 ## Contributing
 
