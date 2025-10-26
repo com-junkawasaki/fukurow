@@ -5,10 +5,13 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "Cyber security domain rules and threat intelligence for Fukurow reasoning engine"
+keywords = ["cyber-security", "threat-intelligence", "rules", "detection", "siem"]
+categories = ["algorithms", "api-bindings"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
-fukurow-rules = { path = "../fukurow-rules" }
+fukurow-core = "0.1.0"
+fukurow-rules = "0.1.0"
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
