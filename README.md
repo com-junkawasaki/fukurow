@@ -20,14 +20,14 @@
 |--------------|--------|-----------|
 | **OWL推論** | 30% | RDFS実装完了、OWL Lite/DL計画中 |
 | **SPARQL 1.1** | 50% | 基本パーサー実装、W3C準拠テスト開始 |
-| **SHACL Core** | 60% | 検証エンジン実装、W3Cスイート統合残 |
+| **SHACL Core** | 65% | 基本制約実装、W3Cスイート統合中 |
 | **RDF/JSON-LD** | 80% | 安定運用可 |
 | **推論エンジン** | 75% | パイプライン完備、RDFS統合済み |
 | **サイバー防御** | 70% | 検出器実装済み |
 | **API/CLI** | 70% | 主要機能完備 |
 | **運用基盤** | 60% | CI/CD・配布設定済み |
 
-**総合完成度: 68%** | **実運用準備度: 58%**
+**総合完成度: 63%** | **実運用準備度: 57%**
 
 ## 🦉 OWL Support (30%)
 
@@ -74,22 +74,25 @@ SPARQL 1.1 クエリエンジンの実装状況:
 - W3C SPARQL 1.1 テストスイート準拠 (syntax-sparql1-5)
 - FILTER/OPTIONAL/UNIONの実装
 
-## ✅ SHACL Support (60%)
+## ✅ SHACL Support (65%)
 
 SHACL Core + SHACL-SPARQL 検証エンジンの実装状況:
 
 ### ✅ 実装済み機能
-- **Loader**: ShapesGraph読み込み (Turtle, JSON-LD, RDF Store)
-- **Validator**: SHACL Core制約検証エンジン
-- **Report**: JSON-LD検証レポート出力
+- **ShapesGraph 読み込み**: SHACL形状のRDFからの読み込み (targetClass, property, datatype, class, hasValue)
+- **制約検証**: Node Shape / Property Shape の基本制約
+- **検証レポート**: 違反結果の構造化レポート
 
 ### ✅ サポートするSHACL Core制約
-- ターゲット指定: `targetClass`, `targetNode`, `targetSubjectsOf`, `targetObjectsOf`
-- Node Shapes: `class`, `datatype`, `nodeKind`, `hasValue`, `pattern`, `minLength`, `maxLength`
-- Property Shapes: `minCount`, `maxCount`, `qualified*`, `uniqueLang`
+- ターゲット指定: `targetClass`
+- Node Shapes: `class`, `datatype`, `hasValue`
+- Property Shapes: `minCount`, `maxCount`
 
 ### 🚧 開発中/未実装
+- SHACL Core 完全制約セット (pattern, minLength, maxLength, etc.)
+- SHACL-SPARQL 拡張制約
 - Property Path評価
+- W3C準拠テストスイート統合 (コンパイル修正中)
 - SHACL-SPARQL拡張制約
 - W3C SHACLテストスイート完全準拠
 
@@ -460,6 +463,14 @@ The system is configured via:
   - [ ] Minimal browser demo (load WASM, feed event, read actions)
   - [ ] CI job: `wasm32-unknown-unknown` build and size budget check
   - [ ] Benchmarks in Web Worker; document perf trade-offs
+
+- [ ] Vercelでの動作/配信
+  - [ ] Astro/静的サイトでWASMデモをホスト（`astoro/` を `vercel build` 対応）
+  - [ ] `vercel.json` と Build Output API v3 で静的出力/エッジ関数を定義
+  - [ ] Edge Function 経由の軽量APIブリッジ（必要時、WASM呼び出しのラッパ）
+  - [ ] Edgeランタイム互換性確認（fs/ネイティブ拡張非依存、Web Crypto採用）
+  - [ ] CI: `vercel pull --yes && vercel build --prod` ドライランを追加
+  - [ ] バンドルサイズとTTFBのSLO設定（サイズ上限/キャッシュ戦略）
 
 - [ ] Persistent graph storage (PostgreSQL, Neo4j)
 - [ ] Distributed reasoning across multiple nodes

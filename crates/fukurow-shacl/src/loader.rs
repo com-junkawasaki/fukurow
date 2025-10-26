@@ -1,9 +1,10 @@
 //! SHACL ShapesGraph 読み込み
 
-use fukurow_core::model::{Iri, Literal, Triple};
+use fukurow_sparql::parser::{Iri, String, Term};
 use fukurow_store::store::RdfStore;
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::ShaclError;
 
 /// Shapes Graph
 #[derive(Debug, Clone)]
@@ -63,10 +64,10 @@ pub enum NodeConstraint {
     Class(Iri),
     Datatype(Iri),
     NodeKind(NodeKind),
-    MinExclusive(Literal),
-    MaxExclusive(Literal),
-    MinInclusive(Literal),
-    MaxInclusive(Literal),
+    MinExclusive(String),
+    MaxExclusive(String),
+    MinInclusive(String),
+    MaxInclusive(String),
     MinLength(u64),
     MaxLength(u64),
     Pattern { pattern: String, flags: Option<String> },
@@ -76,8 +77,8 @@ pub enum NodeConstraint {
     Disjoint(Iri),
     LessThan(Iri),
     LessThanOrEquals(Iri),
-    In(Vec<Literal>),
-    HasValue(Literal),
+    In(Vec<String>),
+    HasValue(String),
     Closed { closed: bool, ignored_properties: Vec<Iri> },
 }
 
@@ -98,15 +99,15 @@ pub enum PropertyConstraint {
     Disjoint(Iri),
     LessThan(Iri),
     LessThanOrEquals(Iri),
-    MinExclusive(Literal),
-    MaxExclusive(Literal),
-    MinInclusive(Literal),
-    MaxInclusive(Literal),
+    MinExclusive(String),
+    MaxExclusive(String),
+    MinInclusive(String),
+    MaxInclusive(String),
     MinLength(u64),
     MaxLength(u64),
     Pattern { pattern: String, flags: Option<String> },
-    In(Vec<Literal>),
-    HasValue(Literal),
+    In(Vec<String>),
+    HasValue(String),
     SparqlConstraint(String), // SHACL-SPARQL
 }
 
@@ -115,10 +116,10 @@ pub enum PropertyConstraint {
 pub enum NodeKind {
     BlankNode,
     Iri,
-    Literal,
+    String,
     BlankNodeOrIri,
-    BlankNodeOrLiteral,
-    IriOrLiteral,
+    BlankNodeOrString,
+    IriOrString,
 }
 
 /// SHACL Loader trait
@@ -155,166 +156,159 @@ impl ShaclLoader for DefaultShaclLoader {
         let mut prefixes = HashMap::new();
 
         // SHACL 語彙の IRI
-        let sh_target_class = Iri::new("http://www.w3.org/ns/shacl#targetClass".to_string());
-        let sh_property = Iri::new("http://www.w3.org/ns/shacl#property".to_string());
-        let sh_path = Iri::new("http://www.w3.org/ns/shacl#path".to_string());
-        let sh_min_count = Iri::new("http://www.w3.org/ns/shacl#minCount".to_string());
-        let sh_max_count = Iri::new("http://www.w3.org/ns/shacl#maxCount".to_string());
-        let sh_datatype = Iri::new("http://www.w3.org/ns/shacl#datatype".to_string());
-        let sh_class = Iri::new("http://www.w3.org/ns/shacl#class".to_string());
-        let sh_node_kind = Iri::new("http://www.w3.org/ns/shacl#nodeKind".to_string());
-        let sh_pattern = Iri::new("http://www.w3.org/ns/shacl#pattern".to_string());
-        let sh_min_length = Iri::new("http://www.w3.org/ns/shacl#minLength".to_string());
-        let sh_max_length = Iri::new("http://www.w3.org/ns/shacl#maxLength".to_string());
-        let sh_min_inclusive = Iri::new("http://www.w3.org/ns/shacl#minInclusive".to_string());
-        let sh_max_inclusive = Iri::new("http://www.w3.org/ns/shacl#maxInclusive".to_string());
-        let sh_has_value = Iri::new("http://www.w3.org/ns/shacl#hasValue".to_string());
-        let sh_in = Iri::new("http://www.w3.org/ns/shacl#in".to_string());
+        let sh_target_class = Iri("http://www.w3.org/ns/shacl#targetClass".to_string());
+        let sh_property = Iri("http://www.w3.org/ns/shacl#property".to_string());
+        let sh_path = Iri("http://www.w3.org/ns/shacl#path".to_string());
+        let sh_min_count = Iri("http://www.w3.org/ns/shacl#minCount".to_string());
+        let sh_max_count = Iri("http://www.w3.org/ns/shacl#maxCount".to_string());
+        let sh_datatype = Iri("http://www.w3.org/ns/shacl#datatype".to_string());
+        let sh_class = Iri("http://www.w3.org/ns/shacl#class".to_string());
+        let sh_node_kind = Iri("http://www.w3.org/ns/shacl#nodeKind".to_string());
+        let sh_pattern = Iri("http://www.w3.org/ns/shacl#pattern".to_string());
+        let sh_min_length = Iri("http://www.w3.org/ns/shacl#minLength".to_string());
+        let sh_max_length = Iri("http://www.w3.org/ns/shacl#maxLength".to_string());
+        let sh_min_inclusive = Iri("http://www.w3.org/ns/shacl#minInclusive".to_string());
+        let sh_max_inclusive = Iri("http://www.w3.org/ns/shacl#maxInclusive".to_string());
+        let sh_has_value = Iri("http://www.w3.org/ns/shacl#hasValue".to_string());
+        let sh_in = Iri("http://www.w3.org/ns/shacl#in".to_string());
 
         // ストアから Shape を構築
-        for stored_triple in store.all_triples().values() {
+        for stored_triple in store.all_triples().values().flatten() {
             let triple = &stored_triple.triple;
 
             // targetClass 関係から Node Shape を検出
-            if triple.predicate == sh_target_class {
-                if let (fukurow_core::model::Term::Iri(shape_iri), fukurow_core::model::Term::Iri(class_iri)) =
-                    (&triple.subject, &triple.object) {
+            if triple.predicate == sh_target_class.0.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let class_iri = Iri(triple.object.clone());
 
-                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
-                        id: shape_iri.clone(),
-                        targets: vec![Target::Class(class_iri.clone())],
-                        constraints: vec![],
-                        property_shapes: vec![],
-                    }));
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
+                    id: shape_iri.clone(),
+                    targets: vec![Target::Class(class_iri.clone())],
+                    constraints: vec![],
+                    property_shapes: vec![],
+                }));
 
-                    if let Shape::Node(node_shape) = shape {
-                        node_shape.targets.push(Target::Class(class_iri.clone()));
-                    }
+                if let Shape::Node(node_shape) = shape {
+                    node_shape.targets.push(Target::Class(class_iri.clone()));
                 }
             }
 
             // property 関係から Property Shape を検出
-            if triple.predicate == sh_property {
-                if let (fukurow_core::model::Term::Iri(parent_shape), fukurow_core::model::Term::Iri(prop_shape)) =
-                    (&triple.subject, &triple.object) {
+            if triple.predicate == sh_property.0.as_str() {
+                let parent_shape_iri = Iri(triple.subject.clone());
+                let prop_shape_iri = Iri(triple.object.clone());
 
-                    let parent_shape_entry = shapes.entry(parent_shape.clone()).or_insert_with(||
-                        Shape::Node(NodeShape {
-                            id: parent_shape.clone(),
-                            targets: vec![],
-                            constraints: vec![],
-                            property_shapes: vec![],
-                        })
-                    );
+                let parent_shape_entry = shapes.entry(parent_shape_iri.clone()).or_insert_with(||
+                    Shape::Node(NodeShape {
+                        id: parent_shape_iri.clone(),
+                        targets: vec![],
+                        constraints: vec![],
+                        property_shapes: vec![],
+                    })
+                );
 
-                    if let Shape::Node(node_shape) = parent_shape_entry {
-                        node_shape.property_shapes.push(prop_shape.clone());
-                    }
-
-                    // Property Shape 自体も登録
-                    shapes.entry(prop_shape.clone()).or_insert_with(||
-                        Shape::Property(PropertyShape {
-                            id: prop_shape.clone(),
-                            path: PropertyPath::Predicate(Iri::new("http://example.org/predicate".to_string())), // TODO: path 取得
-                            constraints: vec![],
-                        })
-                    );
+                if let Shape::Node(node_shape) = parent_shape_entry {
+                    node_shape.property_shapes.push(prop_shape_iri.clone());
                 }
+
+                // Property Shape 自体も登録
+                shapes.entry(prop_shape_iri.clone()).or_insert_with(||
+                    Shape::Property(PropertyShape {
+                        id: prop_shape_iri.clone(),
+                        path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())), // TODO: path 取得
+                        constraints: vec![],
+                    })
+                );
             }
 
-            // minCount/maxCount 制約を検出
-            if triple.predicate == sh_min_count {
-                if let (fukurow_core::model::Term::Iri(shape_iri), fukurow_core::model::Term::Literal(count_lit)) =
-                    (&triple.subject, &triple.object) {
+            // minCount 制約を検出
+            if triple.predicate == sh_min_count.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let count_str = triple.object.clone();
 
-                    if let Some(count) = count_lit.value.parse::<u64>().ok() {
-                        let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
-                            Shape::Property(PropertyShape {
-                                id: shape_iri.clone(),
-                                path: PropertyPath::Predicate(Iri::new("http://example.org/predicate".to_string())),
-                                constraints: vec![],
-                            })
-                        );
+                if let Some(count) = count_str.parse::<u64>().ok() {
+                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                        Shape::Property(PropertyShape {
+                            id: shape_iri.clone(),
+                            path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())),
+                            constraints: vec![],
+                        })
+                    );
 
-                        if let Shape::Property(prop_shape) = shape {
-                            prop_shape.constraints.push(PropertyConstraint::MinCount(count));
-                        }
+                    if let Shape::Property(prop_shape) = shape {
+                        prop_shape.constraints.push(PropertyConstraint::MinCount(count));
                     }
                 }
             }
 
             // maxCount 制約を検出
-            if triple.predicate == sh_max_count {
-                if let (fukurow_core::model::Term::Iri(shape_iri), fukurow_core::model::Term::Literal(count_lit)) =
-                    (&triple.subject, &triple.object) {
+            if triple.predicate == sh_max_count.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let count_str = triple.object.clone();
 
-                    if let Some(count) = count_lit.value.parse::<u64>().ok() {
-                        let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
-                            Shape::Property(PropertyShape {
-                                id: shape_iri.clone(),
-                                path: PropertyPath::Predicate(Iri::new("http://example.org/predicate".to_string())),
-                                constraints: vec![],
-                            })
-                        );
+                if let Some(count) = count_str.parse::<u64>().ok() {
+                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                        Shape::Property(PropertyShape {
+                            id: shape_iri.clone(),
+                            path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())),
+                            constraints: vec![],
+                        })
+                    );
 
-                        if let Shape::Property(prop_shape) = shape {
-                            prop_shape.constraints.push(PropertyConstraint::MaxCount(count));
-                        }
+                    if let Shape::Property(prop_shape) = shape {
+                        prop_shape.constraints.push(PropertyConstraint::MaxCount(count));
                     }
                 }
             }
 
             // datatype 制約を検出
-            if triple.predicate == sh_datatype {
-                if let (fukurow_core::model::Term::Iri(shape_iri), fukurow_core::model::Term::Iri(datatype_iri)) =
-                    (&triple.subject, &triple.object) {
+            if triple.predicate == sh_datatype.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let datatype_iri = Iri(triple.object.clone());
 
-                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
-                        id: shape_iri.clone(),
-                        targets: vec![],
-                        constraints: vec![],
-                        property_shapes: vec![],
-                    }));
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
+                    id: shape_iri.clone(),
+                    targets: vec![],
+                    constraints: vec![],
+                    property_shapes: vec![],
+                }));
 
-                    if let Shape::Node(node_shape) = shape {
-                        node_shape.constraints.push(NodeConstraint::Datatype(datatype_iri.clone()));
-                    }
+                if let Shape::Node(node_shape) = shape {
+                    node_shape.constraints.push(NodeConstraint::Datatype(datatype_iri.clone()));
                 }
             }
 
             // class 制約を検出
-            if triple.predicate == sh_class {
-                if let (fukurow_core::model::Term::Iri(shape_iri), fukurow_core::model::Term::Iri(class_iri)) =
-                    (&triple.subject, &triple.object) {
+            if triple.predicate == sh_class.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let class_iri = Iri(triple.object.clone());
 
-                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
-                        id: shape_iri.clone(),
-                        targets: vec![],
-                        constraints: vec![],
-                        property_shapes: vec![],
-                    }));
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
+                    id: shape_iri.clone(),
+                    targets: vec![],
+                    constraints: vec![],
+                    property_shapes: vec![],
+                }));
 
-                    if let Shape::Node(node_shape) = shape {
-                        node_shape.constraints.push(NodeConstraint::Class(class_iri.clone()));
-                    }
+                if let Shape::Node(node_shape) = shape {
+                    node_shape.constraints.push(NodeConstraint::Class(class_iri.clone()));
                 }
             }
 
             // hasValue 制約を検出
-            if triple.predicate == sh_has_value {
-                if let (fukurow_core::model::Term::Iri(shape_iri), fukurow_core::model::Term::Literal(value_lit)) =
-                    (&triple.subject, &triple.object) {
+            if triple.predicate == sh_has_value.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let value_str = triple.object.clone();
 
-                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
-                        id: shape_iri.clone(),
-                        targets: vec![],
-                        constraints: vec![],
-                        property_shapes: vec![],
-                    }));
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
+                    id: shape_iri.clone(),
+                    targets: vec![],
+                    constraints: vec![],
+                    property_shapes: vec![],
+                }));
 
-                    if let Shape::Node(node_shape) = shape {
-                        node_shape.constraints.push(NodeConstraint::HasValue(value_lit.clone()));
-                    }
+                if let Shape::Node(node_shape) = shape {
+                    node_shape.constraints.push(NodeConstraint::HasValue(value_str.clone()));
                 }
             }
 

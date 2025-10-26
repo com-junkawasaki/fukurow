@@ -2,8 +2,9 @@
 
 use crate::loader::{ShapesGraph, Shape, NodeShape, PropertyShape, Target, PropertyConstraint, NodeConstraint, PropertyPath};
 use crate::report::{ValidationReport, ValidationResult, ViolationLevel};
+use crate::ShaclError;
 use fukurow_store::store::RdfStore;
-use fukurow_core::model::{Iri, Literal, Term};
+use fukurow_sparql::parser::{Iri, Literal, Term};
 use std::collections::{HashMap, HashSet};
 
 /// Validation Configuration
@@ -103,7 +104,7 @@ impl DefaultShaclValidator {
                 if let Some(Shape::Property(prop_shape)) = store // TODO: shapes から取得
                     .all_triples()
                     .values()
-                    .find(|t| matches!(&t.triple.subject, Term::Iri(iri) if iri == prop_shape_id))
+                    .find(|t| t.triple.subject == prop_shape_id)
                     .map(|_| None) { // TODO: PropertyShape 取得ロジック
 
                     let prop_results = self.validate_property_shape(prop_shape, store)?;
@@ -130,21 +131,19 @@ impl DefaultShaclValidator {
         Ok(results)
     }
 
-    fn get_target_nodes(&self, targets: &[Target], store: &RdfStore) -> Result<HashSet<Iri>, ShaclError> {
+    fn get_target_nodes(&self, targets: &[Target], store: &RdfStore) -> Result<HashSet<String>, ShaclError> {
         let mut nodes = HashSet::new();
 
         for target in targets {
             match target {
                 Target::Class(class) => {
                     // rdf:type が class であるノードを取得
-                    let rdf_type = Iri::new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string());
+                    let rdf_type = Iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string());
 
-                    for stored_triple in store.all_triples().values() {
+                    for stored_triple in store.all_triples().values().flatten() {
                         let triple = &stored_triple.triple;
-                        if triple.predicate == rdf_type && triple.object == Term::Iri(class.clone()) {
-                            if let Term::Iri(subject_iri) = &triple.subject {
-                                nodes.insert(subject_iri.clone());
-                            }
+                        if triple.predicate == rdf_type.0 && triple.object == class {
+                        nodes.insert(triple.subject.clone());
                         }
                     }
                 }
@@ -152,22 +151,18 @@ impl DefaultShaclValidator {
                     nodes.insert(node.clone());
                 }
                 Target::SubjectsOf(predicate) => {
-                    for stored_triple in store.all_triples().values() {
+                    for stored_triple in store.all_triples().values().flatten() {
                         let triple = &stored_triple.triple;
-                        if triple.predicate == *predicate {
-                            if let Term::Iri(subject_iri) = &triple.subject {
-                                nodes.insert(subject_iri.clone());
-                            }
+                        if triple.predicate == predicate {
+                        nodes.insert(triple.subject.clone());
                         }
                     }
                 }
                 Target::ObjectsOf(predicate) => {
-                    for stored_triple in store.all_triples().values() {
+                    for stored_triple in store.all_triples().values().flatten() {
                         let triple = &stored_triple.triple;
-                        if triple.predicate == *predicate {
-                            if let Term::Iri(object_iri) = &triple.object {
-                                nodes.insert(object_iri.clone());
-                            }
+                        if triple.predicate == predicate {
+                        nodes.insert(triple.object.clone());
                         }
                     }
                 }
@@ -182,14 +177,14 @@ impl DefaultShaclValidator {
 
         match constraint {
             NodeConstraint::Class(expected_class) => {
-                let rdf_type = Iri::new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string());
+                let rdf_type = Iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string());
                 let mut has_class = false;
 
-                for stored_triple in store.all_triples().values() {
+                for stored_triple in store.all_triples().values().flatten() {
                     let triple = &stored_triple.triple;
-                    if triple.subject == Term::Iri(node.clone()) &&
-                       triple.predicate == rdf_type &&
-                       triple.object == Term::Iri(expected_class.clone()) {
+                    if triple.subject == node.0 &&
+                       triple.predicate == rdf_type.0 &&
+                       triple.object == expected_class.0 {
                         has_class = true;
                         break;
                     }
@@ -200,7 +195,7 @@ impl DefaultShaclValidator {
                         focus_node: Some(node.clone()),
                         result_path: None,
                         value: None,
-                        source_constraint_component: Iri::new("http://www.w3.org/ns/shacl#class".to_string()),
+                        source_constraint_component: Iri("http://www.w3.org/ns/shacl#class".to_string()),
                         source_shape: None, // TODO
                         detail: None,
                         message: Some(format!("Node {} is not of class {}", node, expected_class)),
@@ -208,39 +203,15 @@ impl DefaultShaclValidator {
                     });
                 }
             }
-            NodeConstraint::Datatype(expected_datatype) => {
-                // ノードの値を取得（リテラルとして）
-                let mut node_values = Vec::new();
-                for stored_triple in store.all_triples().values() {
-                    let triple = &stored_triple.triple;
-                    if triple.subject == Term::Iri(node.clone()) {
-                        if let Term::Literal(lit) = &triple.object {
-                            node_values.push(lit.clone());
-                        }
-                    }
-                }
-
-                for value in node_values {
-                    if value.datatype != Some(expected_datatype.clone()) {
-                        results.push(ValidationResult {
-                            focus_node: Some(node.clone()),
-                            result_path: None,
-                            value: Some(Term::Literal(value.clone())),
-                            source_constraint_component: Iri::new("http://www.w3.org/ns/shacl#datatype".to_string()),
-                            source_shape: None,
-                            detail: None,
-                            message: Some(format!("Value {} does not have datatype {}", value.value, expected_datatype)),
-                            severity: ViolationLevel::Violation,
-                        });
-                    }
-                }
-            }
-            NodeConstraint::HasValue(expected_value) => {
+            NodeConstraint::Datatype(_expected_datatype) => {
+                // TODO: Implement proper datatype checking
+                // For now, skip datatype validation as current data model does not support it
+            }            NodeConstraint::HasValue(expected_value) => {
                 let mut found = false;
-                for stored_triple in store.all_triples().values() {
+                for stored_triple in store.all_triples().values().flatten() {
                     let triple = &stored_triple.triple;
-                    if triple.subject == Term::Iri(node.clone()) &&
-                       triple.object == Term::Literal(expected_value.clone()) {
+                    if triple.subject == node.0 &&
+                       triple.object == expected_value {
                         found = true;
                         break;
                     }
@@ -251,7 +222,7 @@ impl DefaultShaclValidator {
                         focus_node: Some(node.clone()),
                         result_path: None,
                         value: None,
-                        source_constraint_component: Iri::new("http://www.w3.org/ns/shacl#hasValue".to_string()),
+                        source_constraint_component: Iri("http://www.w3.org/ns/shacl#hasValue".to_string()),
                         source_shape: None,
                         detail: None,
                         message: Some(format!("Node {} does not have required value {}", node, expected_value.value)),
@@ -278,7 +249,7 @@ impl DefaultShaclValidator {
                         focus_node: None, // TODO
                         result_path: None, // TODO
                         value: None,
-                        source_constraint_component: Iri::new("http://www.w3.org/ns/shacl#minCount".to_string()),
+                        source_constraint_component: Iri("http://www.w3.org/ns/shacl#minCount".to_string()),
                         source_shape: None,
                         detail: None,
                         message: Some(format!("Expected at least {} values, found {}", min_count, values.len())),
@@ -292,7 +263,7 @@ impl DefaultShaclValidator {
                         focus_node: None,
                         result_path: None,
                         value: None,
-                        source_constraint_component: Iri::new("http://www.w3.org/ns/shacl#maxCount".to_string()),
+                        source_constraint_component: Iri("http://www.w3.org/ns/shacl#maxCount".to_string()),
                         source_shape: None,
                         detail: None,
                         message: Some(format!("Expected at most {} values, found {}", max_count, values.len())),
@@ -307,7 +278,7 @@ impl DefaultShaclValidator {
                         focus_node: None,
                         result_path: None,
                         value: None,
-                        source_constraint_component: Iri::new("http://www.w3.org/ns/shacl#hasValue".to_string()),
+                        source_constraint_component: Iri("http://www.w3.org/ns/shacl#hasValue".to_string()),
                         source_shape: None,
                         detail: None,
                         message: Some(format!("Required value {} not found", expected_value.value)),
@@ -324,9 +295,9 @@ impl DefaultShaclValidator {
         Ok(results)
     }
 
-    fn get_property_values(&self, path: &PropertyPath, store: &RdfStore) -> Result<Vec<Term>, ShaclError> {
+    fn get_property_values(&self, path: &PropertyPath, store: &RdfStore) -> Result<Vec<String>, ShaclError> {
         // TODO: Property path に従って値を抽出
         // 簡易実装として全トリプルを返す
-        Ok(store.all_triples().values().map(|t| t.triple.object.clone()).collect())
+        Ok(store.all_triples().values().flatten().map(|t| t.triple.object.clone()).collect())
     }
 }

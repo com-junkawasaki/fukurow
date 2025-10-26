@@ -1,7 +1,7 @@
 //! SHACL 検証レポート
 
 use crate::loader::ShapesGraph;
-use fukurow_core::model::{Iri, Literal, Term};
+use fukurow_sparql::parser::{Iri, Literal, Term};
 use serde::{Serialize, Deserialize};
 
 /// Validation Report
@@ -9,48 +9,36 @@ use serde::{Serialize, Deserialize};
 pub struct ValidationReport {
     pub conforms: bool,
     pub results: Vec<ValidationResult>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub shapes_graph: Option<ShapesGraph>,
 }
 
 /// Validation Result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct ValidationResult {
-    #[serde(rename = "focusNode", skip_serializing_if = "Option::is_none")]
     pub focus_node: Option<Iri>,
 
-    #[serde(rename = "resultPath", skip_serializing_if = "Option::is_none")]
     pub result_path: Option<Iri>,
 
-    #[serde(rename = "value", skip_serializing_if = "Option::is_none")]
-    pub value: Option<Term>,
+    pub value: Option<String>,
 
-    #[serde(rename = "sourceConstraintComponent")]
     pub source_constraint_component: Iri,
 
-    #[serde(rename = "sourceShape", skip_serializing_if = "Option::is_none")]
     pub source_shape: Option<Iri>,
 
-    #[serde(rename = "detail", skip_serializing_if = "Option::is_none")]
     pub detail: Option<Box<ValidationResult>>,
 
-    #[serde(rename = "resultMessage", skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 
-    #[serde(rename = "resultSeverity")]
     pub severity: ViolationLevel,
 }
 
 /// Violation Level
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ViolationLevel {
-    #[serde(rename = "sh:Violation")]
     Violation,
 
-    #[serde(rename = "sh:Warning")]
     Warning,
 
-    #[serde(rename = "sh:Info")]
     Info,
 }
 

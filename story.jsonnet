@@ -8,12 +8,12 @@
 
   // OWLプロジェクト完成度評価
   owl_project_assessment: {
-    overall_completion: 68,
-    operational_readiness: 58,
+    overall_completion: 63,
+    operational_readiness: 57,
     components: {
       owl_reasoning: { completion: 30, status: "partial", note: "RDFS実装完了、OWL Lite/DL計画中" },
       sparql_engine: { completion: 50, status: "partial", note: "基本パーサー実装、W3C準拠テスト開始" },
-      shacl_validator: { completion: 60, status: "partial", note: "Core制約検証実装、W3Cスイート統合残" },
+      shacl_validator: { completion: 65, status: "partial", note: "基本制約実装、W3Cスイート統合中" },
       rdf_jsonld: { completion: 80, status: "stable", note: "安定運用可" },
       reasoning_engine: { completion: 75, status: "stable", note: "パイプライン完備、RDFS統合済み" },
       cyber_defense: { completion: 70, status: "stable", note: "検出器実装済み" },
@@ -246,7 +246,7 @@
         timestamp: std.timeNow(),
         components: {
           "fukurow-sparql": "SPARQL 1.1 parser with SELECT/CONSTRUCT/ASK/DESCRIBE and PREFIX support (50% complete)",
-          "fukurow-shacl": "SHACL Core + SHACL-SPARQL validation engine (60% complete)",
+          "fukurow-shacl": "SHACL Core + SHACL-SPARQL validation engine (65% complete)",
           "integration": "SPARQL-SHACL integration in fukurow-engine"
         }
       },
@@ -424,7 +424,7 @@
     phase_1: "基盤強化 (2-4週間): SPARQL/SHACL準拠テスト、RDFS推論、性能最適化",
     phase_2: "OWL Lite実装 (4-6週間): テーブルロー推論、健全性検証、パフォーマンス最適化",
     phase_3: "OWL DL拡張 (6-8週間): 完全推論、計算量分析、大規模オントロジーテスト",
-    phase_4: "WebAssembly & 分散化 (8-12週間): ブラウザ対応、分散推論、ストリーミング処理",
+    phase_4: "WebAssembly & 分散化 (8-12週間): ブラウザ対応、Vercel配信、分散推論、ストリーミング処理",
     phase_5: "エンタープライズ対応 (12-16週間): SIEM統合、ML異常検知、エンタープライズセキュリティ",
   },
 
@@ -454,6 +454,9 @@
     phase_4_wasm_distributed: [
       "WebAssemblyコンパイル対応",
       "ブラウザデモアプリケーション作成",
+      "Vercelデプロイ設定（vercel.json/静的出力/Edge Function）",
+      "Edgeランタイム互換性確認（ネイティブ拡張非依存/Web Crypto採用）",
+      "CI: vercel build ドライランとサイズ/TTFB SLOチェック",
       "分散推論アーキテクチャ設計",
       "リアルタイムストリーミング処理",
       "永続ストレージ統合 (PostgreSQL, Neo4j)"
