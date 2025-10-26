@@ -12,13 +12,13 @@ categories = ["database", "web-programming", "science", "api-bindings"]
 
 [dependencies]
 # Core crates (all optional for feature gating)
-fukurow-core = { version = "0.1.0", optional = true }
-fukurow-store = { version = "0.1.0", optional = true }
-fukurow-rules = { version = "0.1.0", optional = true }
-fukurow-engine = { version = "0.1.0", optional = true }
-fukurow-domain-cyber = { version = "0.1.0", optional = true }
-fukurow-api = { version = "0.1.0", optional = true }
-fukurow-cli = { version = "0.1.0", optional = true }
+fukurow-core = { path = "../fukurow-core", optional = true }
+fukurow-store = { path = "../fukurow-store", optional = true }
+fukurow-rules = { path = "../fukurow-rules", optional = true }
+fukurow-engine = { path = "../fukurow-engine", optional = true }
+fukurow-domain-cyber = { path = "../fukurow-domain-cyber", optional = true }
+fukurow-api = { path = "../fukurow-api", optional = true }
+fukurow-cli = { path = "../fukurow-cli", optional = true }
 
 # Re-export commonly used external dependencies for convenience
 serde.workspace = true
