@@ -130,6 +130,9 @@ pub enum EngineError {
     #[error("Rule execution failed: {0}")]
     RuleError(#[from] fukurow_rules::RuleError),
 
+    #[error("RDFS reasoning failed: {0}")]
+    RdfsError(#[from] fukurow_rdfs::RdfsError),
+
     #[error("Processing timeout after {0}ms")]
     TimeoutError(u64),
 
