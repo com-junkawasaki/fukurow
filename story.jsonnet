@@ -192,6 +192,22 @@
           "fukurow@0.1.0",
         ],
       },
+
+      sparql_shacl_implementation: {
+        id: "sparql_shacl_implementation",
+        name: "SPARQL and SHACL Full Implementation",
+        type: "development",
+        description: "Implement complete SPARQL 1.1 engine and SHACL Core+SPARQL validation",
+        dependencies: ["deployment"],
+        outputs: ["sparql_engine", "shacl_validator", "query_validation_integration"],
+        status: "completed",
+        timestamp: std.timeNow(),
+        components: {
+          "fukurow-sparql": "SPARQL 1.1 parser, algebra, optimizer, evaluator",
+          "fukurow-shacl": "SHACL Core + SHACL-SPARQL validation engine",
+          "integration": "SPARQL-SHACL integration in fukurow-engine"
+        }
+      },
     },
 
     // Execution edges (dependencies)
@@ -206,11 +222,12 @@
       { from: "documentation", to: "testing" },
       { from: "testing", to: "build_optimization" },
       { from: "build_optimization", to: "deployment" },
+      { from: "deployment", to: "sparql_shacl_implementation" },
     ],
 
     // Current execution state
     execution_state: {
-      current_node: "deployment",
+      current_node: "sparql_shacl_implementation",
       completed_nodes: [
         "project_init",
         "graph_crate",
@@ -223,6 +240,7 @@
         "testing",
         "build_optimization",
         "deployment",
+        "sparql_shacl_implementation",
       ],
       pending_nodes: [],
       blocked_nodes: [],

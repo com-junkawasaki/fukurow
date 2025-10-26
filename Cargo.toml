@@ -4,6 +4,8 @@ members = [
     "crates/fukurow-core",
     "crates/fukurow-store",
     "crates/fukurow-rules",
+    "crates/fukurow-sparql",
+    "crates/fukurow-shacl",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",
     "crates/fukurow-api",
@@ -63,3 +65,8 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = "0.3"
 js-sys = "0.3"
+
+# SPARQL parsing and processing
+logos = "0.14"
+winnow = "0.6"
+itertools = "0.13"

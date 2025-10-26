@@ -1,0 +1,20 @@
+[package]
+name = "fukurow-sparql"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SPARQL 1.1 engine (parser, algebra, optimizer, evaluator) for Fukurow"
+keywords = ["sparql", "rdf", "query", "parser", "algebra"]
+categories = ["database", "parsing"]
+
+[dependencies]
+fukurow-core = "0.1.0"
+fukurow-store = "0.1.0"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+logos.workspace = true
+winnow.workspace = true
+itertools.workspace = true

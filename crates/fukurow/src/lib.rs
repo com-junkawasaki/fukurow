@@ -49,6 +49,8 @@
 //! - **`fukurow-core`**: Core RDF/JSON-LD data models and processing
 //! - **`fukurow-store`**: RDF triple store with provenance tracking
 //! - **`fukurow-rules`**: Rule traits and constraint validation (SHACL equivalent)
+//! - **`fukurow-sparql`**: SPARQL 1.1 query engine (parser, algebra, optimizer, evaluator)
+//! - **`fukurow-shacl`**: SHACL Core and SHACL-SPARQL validation
 //! - **`fukurow-engine`**: Reasoning engine orchestration
 //! - **`fukurow-domain-cyber`**: Cyber security domain rules
 //! - **`fukurow-api`**: RESTful web API
@@ -60,6 +62,8 @@
 //! - `core`: Only core data models
 //! - `store`: RDF triple store functionality
 //! - `rules`: Rule engine and validation
+//! - `sparql`: SPARQL query engine
+//! - `shacl`: SHACL validation engine
 //! - `engine`: Reasoning orchestration
 //! - `cyber`: Cyber security domain rules
 //! - `api`: REST API server
@@ -76,6 +80,12 @@ pub use fukurow_store as store;
 
 #[cfg(feature = "fukurow-rules")]
 pub use fukurow_rules as rules;
+
+#[cfg(feature = "fukurow-sparql")]
+pub use fukurow_sparql as sparql;
+
+#[cfg(feature = "fukurow-shacl")]
+pub use fukurow_shacl as shacl;
 
 #[cfg(feature = "fukurow-engine")]
 pub use fukurow_engine as engine;
@@ -135,6 +145,12 @@ pub mod prelude {
     pub use crate::Rule;
     #[cfg(feature = "fukurow-rules")]
     pub use crate::RuleRegistry;
+
+    #[cfg(feature = "fukurow-sparql")]
+    pub use fukurow_sparql::{SparqlParser, SparqlQuery, SparqlEvaluator, QueryResult};
+
+    #[cfg(feature = "fukurow-shacl")]
+    pub use fukurow_shacl::{ShaclLoader, ShaclValidator, ValidationReport};
 
     #[cfg(feature = "fukurow-domain-cyber")]
     pub use crate::ThreatProcessor;
@@ -200,6 +216,8 @@ pub fn health_check() -> serde_json::Value {
             "core": true,
             "store": true,
             "rules": true,
+            "sparql": cfg!(feature = "fukurow-sparql"),
+            "shacl": cfg!(feature = "fukurow-shacl"),
             "engine": true,
             "domain_cyber": true,
             "api": true,
