@@ -47,13 +47,23 @@ cd reasoner-ts
 cargo build --release
 ```
 
+### Testing
+```bash
+# Run all tests
+cargo test
+
+# Run tests for specific crate
+cargo test -p reasoner-core
+cargo test -p rules-cyber
+```
+
 ### CLI Usage
 ```bash
 # Start API server
 cargo run --bin reasoner-cli -- serve
 
 # Analyze single event
-cargo run --bin reasoner-cli -- analyze --json '{"type": "NetworkConnection", "source_ip": "192.168.1.10", "dest_ip": "malicious.example.com"}'
+cargo run --bin reasoner-cli -- analyze --json '{"type": "NetworkConnection", "source_ip": "192.168.1.10", "dest_ip": "192.168.1.100"}'
 
 # Process events from file
 cargo run --bin reasoner-cli -- process --input events.json --output results.json
