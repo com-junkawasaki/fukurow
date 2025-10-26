@@ -25,7 +25,7 @@ use fukurow::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut engine = FukurowEngine::new();
+    let mut engine = ReasonerEngine::new();
 
     let event = CyberEvent::NetworkConnection {
         source_ip: "192.168.1.100".to_string(),
@@ -43,10 +43,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## 🧩 モジュラーアーキテクチャ
+## 🧩 モジュラーアーキテクチャ（crates.io）
 
-Fukurowは以下の専門化されたcrateから構成されます：
+公開済み crates（v0.1.0）:
+- fukurow-core
+- fukurow-store
+- fukurow-rules
+- fukurow-engine
+- fukurow-domain-cyber
+- fukurow-api
+- fukurow-cli
+- fukurow (統合)
 
+### ソース構成
 ```
 fukurow/                     # 🦉 統合メインcrate
 ├── fukurow-core            # 📊 RDF/JSON-LDコアデータモデル
@@ -105,7 +114,12 @@ pub enum Provenance {
 - Rust 1.70+
 - Cargo
 
-### Installation
+### Installation (via crates.io)
+```bash
+cargo add fukurow
+```
+
+### From source
 ```bash
 git clone https://github.com/com-junkawasaki/fukurow
 cd fukurow
@@ -119,7 +133,7 @@ cargo test
 
 # Run tests for specific crate
 cargo test -p fukurow-core
-cargo test -p rules-cyber
+cargo test -p fukurow-domain-cyber
 ```
 
 ### CLI Usage
