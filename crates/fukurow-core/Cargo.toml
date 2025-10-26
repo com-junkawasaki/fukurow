@@ -5,6 +5,9 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "Core RDF/JSON-LD data models and processing for Fukurow reasoning engine"
+keywords = ["rdf", "json-ld", "data-model", "semantic-web"]
+categories = ["data-structures", "parsing"]
 
 [dependencies]
 serde.workspace = true
