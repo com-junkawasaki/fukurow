@@ -1,8 +1,7 @@
 //! Query interface for graph operations
 
-use crate::model::Triple;
 use crate::store::GraphStore;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 /// Simple query builder for graph patterns
 #[derive(Debug, Clone)]

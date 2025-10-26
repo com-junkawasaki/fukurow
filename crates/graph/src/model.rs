@@ -1,8 +1,7 @@
 //! Graph data models for JSON-LD reasoning
 
 use serde::{Deserialize, Serialize};
-use sophia::api::prelude::*;
-use sophia::api::term::SimpleIri;
+// Sophia API imports removed - using simple string-based representation
 use std::collections::HashMap;
 
 /// RDF Triple representation
@@ -25,7 +24,7 @@ pub struct JsonLdDocument {
 }
 
 /// Named Graph for organizing triples
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct NamedGraph {
     pub name: String,
     pub triples: Vec<Triple>,

@@ -1,8 +1,8 @@
 //! Graph storage and manipulation
 
 use crate::model::{Triple, NamedGraph, JsonLdDocument};
-use std::collections::{HashMap, HashSet};
-use anyhow::{Result, anyhow};
+use std::collections::HashMap;
+use anyhow::Result;
 
 /// In-memory graph store
 #[derive(Debug, Clone, Default)]
@@ -116,7 +116,7 @@ impl GraphStore {
 
         // Add default graph triples
         for triple in &self.default_graph.triples {
-            let mut node = serde_json::json!({
+            let node = serde_json::json!({
                 "@id": triple.subject,
                 triple.predicate.clone(): triple.object
             });
@@ -126,7 +126,7 @@ impl GraphStore {
         // Add named graph triples
         for named_graph in self.graphs.values() {
             for triple in &named_graph.triples {
-                let mut node = serde_json::json!({
+                let node = serde_json::json!({
                     "@id": triple.subject,
                     triple.predicate.clone(): triple.object
                 });

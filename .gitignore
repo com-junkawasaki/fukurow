@@ -1,0 +1,70 @@
+# Rust build artifacts
+target/
+Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage reports
+coverage/
+*.profraw
+
+# Cargo registry cache (optional, speeds up builds)
+.cargo/
+
+# Node.js (if any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Biome cache
+.biome_cache/
+
+# Next.js (if any)
+.next/
+out/
+
+# Testing
+.coverage
+.nyc_output
+
+# Miscellaneous
+.cache
+dist/
+build/
