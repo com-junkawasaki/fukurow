@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 description = "Fukurow - Unified Rust Reasoning & Knowledge Graph Stack. JSON-LD/RDF/OWL/SPARQL/GraphQL-LD based knowledge processing stack with fast inference engine and auditable knowledge store."
-keywords = ["rdf", "json-ld", "reasoning", "knowledge-graph", "cyber-security", "semantic-web", "owl", "sparql"]
+keywords = ["rdf", "json-ld", "reasoning", "knowledge-graph", "cyber-security"]
 categories = ["database", "web-programming", "science", "api-bindings"]
 
 [dependencies]
