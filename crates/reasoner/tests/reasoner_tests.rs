@@ -5,17 +5,18 @@ use reasoner_graph::model::{CyberEvent, SecurityAction, InferenceRule, Triple};
 use reasoner_core::rules::RuleEngine;
 use reasoner_core::inference::InferenceContext;
 use reasoner_graph::store::GraphStore;
-use tokio::test;
 
-#[test]
+#[tokio::test]
 async fn test_reasoner_engine_creation() {
     let reasoner = ReasonerEngine::new();
 
     // Engine should be created without errors
-    assert!(reasoner.get_graph_store().await.is_ok());
+    let _store = reasoner.get_graph_store().await;
+    // If we reach here, creation succeeded
+    assert!(true);
 }
 
-#[test]
+#[tokio::test]
 async fn test_add_event() {
     let reasoner = ReasonerEngine::new();
 
@@ -31,13 +32,13 @@ async fn test_add_event() {
     assert!(result.is_ok());
 
     // Check that event was added to graph
-    let store = reasoner.get_graph_store().await.unwrap();
+    let store = reasoner.get_graph_store().await;
     let graph_store = store.read().await;
     let triples = graph_store.find_triples(None, None, None);
     assert!(!triples.is_empty());
 }
 
-#[test]
+#[tokio::test]
 async fn test_reasoning_with_no_events() {
     let reasoner = ReasonerEngine::new();
 
@@ -46,14 +47,14 @@ async fn test_reasoning_with_no_events() {
     assert!(actions.is_empty());
 }
 
-#[test]
+#[tokio::test]
 async fn test_rule_engine_creation() {
     let rule_engine = RuleEngine::new();
     assert!(rule_engine.get_rules().is_empty());
 }
 
-#[test]
-fn test_rule_engine_add_rule() {
+#[tokio::test]
+async fn test_rule_engine_add_rule() {
     let mut rule_engine = RuleEngine::new();
 
     let rule = InferenceRule {
@@ -76,8 +77,7 @@ fn test_rule_engine_add_rule() {
 
 #[tokio::test]
 async fn test_rule_evaluation_empty_conditions() {
-    let mut store = GraphStore::new();
-    let rule_engine = RuleEngine::new();
+    let store = GraphStore::new();
 
     // Add a rule with empty conditions (should always fire)
     let mut rule_engine = RuleEngine::new();
@@ -110,7 +110,6 @@ async fn test_rule_evaluation_empty_conditions() {
 #[tokio::test]
 async fn test_rule_evaluation_with_conditions() {
     let mut store = GraphStore::new();
-    let rule_engine = RuleEngine::new();
 
     // Add test triple to store
     store.add_triple(Triple {
@@ -153,8 +152,7 @@ async fn test_rule_evaluation_with_conditions() {
 
 #[tokio::test]
 async fn test_rule_evaluation_no_match() {
-    let mut store = GraphStore::new();
-    let rule_engine = RuleEngine::new();
+    let store = GraphStore::new();
 
     // Add rule that checks for non-existent triple
     let mut rule_engine = RuleEngine::new();
@@ -182,8 +180,8 @@ async fn test_rule_evaluation_no_match() {
     assert!(actions.is_empty());
 }
 
-#[test]
-fn test_inference_context_operations() {
+#[tokio::test]
+async fn test_inference_context_operations() {
     let mut context = InferenceContext::new();
 
     // Test variable binding
@@ -202,8 +200,8 @@ fn test_inference_context_operations() {
     assert!(context.get_metadata("test_key").is_none());
 }
 
-#[test]
-fn test_inference_context_child() {
+#[tokio::test]
+async fn test_inference_context_child() {
     let mut parent = InferenceContext::new();
     parent.bind_variable("parent_var".to_string(), "parent_value".to_string());
 
@@ -220,7 +218,7 @@ fn test_inference_context_child() {
 
 #[tokio::test]
 async fn test_malicious_ip_rule() {
-    let reasoner = ReasonerEngine::new();
+    let mut reasoner = ReasonerEngine::new();
 
     // Add malicious IP connection event
     let event = CyberEvent::NetworkConnection {
@@ -268,7 +266,7 @@ async fn test_malicious_ip_rule() {
 
 #[tokio::test]
 async fn test_multiple_events_reasoning() {
-    let reasoner = ReasonerEngine::new();
+    let mut reasoner = ReasonerEngine::new();
 
     // Add multiple suspicious events
     let events = vec![
@@ -343,7 +341,7 @@ async fn test_multiple_events_reasoning() {
 
 #[tokio::test]
 async fn test_reasoner_reset() {
-    let reasoner = ReasonerEngine::new();
+    let mut reasoner = ReasonerEngine::new();
 
     // Add event
     let event = CyberEvent::NetworkConnection {
@@ -357,7 +355,7 @@ async fn test_reasoner_reset() {
     reasoner.add_event(event).await.unwrap();
 
     // Verify event exists
-    let store = reasoner.get_graph_store().await.unwrap();
+    let store = reasoner.get_graph_store().await;
     let graph_store = store.read().await;
     assert!(!graph_store.find_triples(None, None, None).is_empty());
 
@@ -365,7 +363,7 @@ async fn test_reasoner_reset() {
     reasoner.reset().await.unwrap();
 
     // Verify reset worked
-    let store = reasoner.get_graph_store().await.unwrap();
+    let store = reasoner.get_graph_store().await;
     let graph_store = store.read().await;
     assert!(graph_store.find_triples(None, None, None).is_empty());
 }

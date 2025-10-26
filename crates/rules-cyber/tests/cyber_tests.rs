@@ -1,7 +1,7 @@
 //! Tests for the rules-cyber crate
 
 use rules_cyber::detectors::{MaliciousIpDetector, LateralMovementDetector, PrivilegeEscalationDetector};
-use rules_cyber::patterns::{PatternDetector, AttackPattern, AnomalyDetector};
+use rules_cyber::patterns::{PatternDetector, AnomalyDetector};
 use rules_cyber::threat_intelligence::{ThreatProcessor, ThreatIndicator, IndicatorType, ThreatSource};
 use reasoner_graph::model::{CyberEvent, SecurityAction};
 
@@ -269,15 +269,15 @@ fn test_threat_processor_filtering() {
     let processor = ThreatProcessor::new();
 
     // Get all IP indicators
-    let ip_indicators = processor.feed.get_indicators_by_type(IndicatorType::IpAddress);
+    let ip_indicators = processor.feed().get_indicators_by_type(IndicatorType::IpAddress);
     assert!(!ip_indicators.is_empty());
 
     // Get indicators by threat type
-    let malware_indicators = processor.feed.get_indicators_by_threat_type("malware_c2");
+    let malware_indicators = processor.feed().get_indicators_by_threat_type("malware_c2");
     assert!(!malware_indicators.is_empty());
 
     // Get phishing indicators
-    let phishing_indicators = processor.feed.get_indicators_by_threat_type("phishing");
+    let phishing_indicators = processor.feed().get_indicators_by_threat_type("phishing");
     assert!(!phishing_indicators.is_empty());
 }
 
@@ -337,7 +337,8 @@ fn test_integration_cyber_event_processing() {
     // Test pattern detection (network patterns)
     let actions = pattern_detector.match_patterns(&[event]);
     // May or may not match depending on patterns, but should not panic
-    assert!(actions.is_ok() || actions.is_err()); // Just ensure it doesn't crash
+    // Just ensure it returns a Vec (doesn't crash)
+    let _actions = actions; // If we reach here, it didn't crash
 }
 
 #[test]

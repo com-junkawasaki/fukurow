@@ -4,7 +4,7 @@ use reasoner_graph::model::{CyberEvent, SecurityAction};
 use serde::{Deserialize, Serialize};
 
 /// API response wrapper
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
     pub success: bool,
     pub data: Option<T>,
@@ -33,7 +33,7 @@ impl<T> ApiResponse<T> {
 }
 
 /// Event submission request
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SubmitEventRequest {
     pub event: CyberEvent,
 }

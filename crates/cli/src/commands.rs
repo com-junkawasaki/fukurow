@@ -123,7 +123,7 @@ pub enum ThreatCommands {
 }
 
 /// Output format options
-#[derive(Clone, Debug, clap::ValueEnum)]
+#[derive(Clone, Debug, PartialEq, clap::ValueEnum)]
 pub enum OutputFormat {
     Text,
     Json,

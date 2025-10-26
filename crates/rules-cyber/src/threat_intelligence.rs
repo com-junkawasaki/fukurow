@@ -146,6 +146,13 @@ pub struct ThreatProcessor {
 }
 
 impl ThreatProcessor {
+    /// Get access to the threat feed (for testing)
+    pub fn feed(&self) -> &ThreatFeed {
+        &self.feed
+    }
+}
+
+impl ThreatProcessor {
     pub fn new() -> Self {
         let mut processor = Self {
             feed: ThreatFeed::new(),

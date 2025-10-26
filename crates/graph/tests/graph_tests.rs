@@ -1,6 +1,6 @@
 //! Tests for the graph crate
 
-use reasoner_graph::model::{Triple, NamedGraph, JsonLdDocument};
+use reasoner_graph::model::{Triple, NamedGraph};
 use reasoner_graph::store::GraphStore;
 use reasoner_graph::query::{GraphQuery, var, const_val};
 
