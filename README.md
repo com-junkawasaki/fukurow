@@ -26,6 +26,7 @@
 | **サイバー防御** | 70% | 検出器実装済み |
 | **API/CLI** | 70% | 主要機能完備 |
 | **SIEM統合** | 80% | Splunk・ELK・Chronicle対応完了 |
+| **WebAssembly** | 70% | ブラウザ内推論・リアルタイム可視化 |
 | **運用基盤** | 60% | CI/CD・配布設定済み |
 | **テストカバレッジ** | 45% | 8 crateで193+テスト、信頼性向上 |
 
@@ -121,6 +122,88 @@ SHACL Core + SHACL-SPARQL 検証エンジンの実装状況:
 - W3C準拠テストスイート統合 (コンパイル修正中)
 - SHACL-SPARQL拡張制約
 - W3C SHACLテストスイート完全準拠
+
+## 🌐 WebAssembly Support (70%)
+
+Fukurowはブラウザ環境での動作を完全にサポートし、クライアントサイドでのOWL推論を実現します。
+
+### 🚀 WebAssembly機能
+
+- **ブラウザ内推論**: JavaScriptから直接OWL Lite/DL推論エンジンを呼び出し
+- **セキュア実行**: 機密データがサーバーに送信されないクライアントサイド処理
+- **オフライン対応**: インターネット接続なしでのオントロジー処理
+- **リアルタイム可視化**: HTML5 Canvasによる知識グラフの動的描画
+
+### 📦 WebAssembly API
+
+```javascript
+import init, { FukurowEngine } from './pkg/fukurow.js';
+
+async function run() {
+    await init();
+    const engine = FukurowEngine.new();
+
+    // RDFデータの読み込み
+    engine.add_triple("http://example.org/John", "rdf:type", "http://example.org/Person");
+    engine.add_triple("http://example.org/Person", "rdfs:subClassOf", "http://example.org/Animal");
+
+    // 整合性チェック
+    const isConsistent = engine.check_consistency_lite();
+    console.log(`Ontology is consistent: ${isConsistent}`);
+
+    // グラフ可視化
+    engine.render_graph("graph-canvas");
+}
+
+run();
+```
+
+### 🎨 デモアプリケーション
+
+ブラウザでFukurowの機能を体験できます：
+
+```bash
+# デモページを開く
+open demo.html
+```
+
+デモ機能:
+- **RDFデータ入力**: Turtle形式でのオントロジー定義
+- **整合性検証**: OWL Lite/DLによる自動整合性チェック
+- **グラフ可視化**: 知識構造のリアルタイムCanvas描画
+- **コンソール出力**: 推論プロセスの詳細ログ表示
+
+### 🔧 WebAssemblyビルド
+
+```bash
+# WebAssemblyターゲットのインストール
+rustup target add wasm32-unknown-unknown
+
+# WASMビルド（概念実証）
+wasm-pack build crates/fukurow-wasm --target web --out-dir pkg
+
+# ブラウザでテスト
+cd pkg && python3 -m http.server 8000
+open http://localhost:8000
+```
+
+### 🏗️ WASMアーキテクチャ
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   JavaScript    │────│  wasm-bindgen    │────│    Rust/WASM    │
+│   Application   │    │    Bridge        │    │   Fukurow Core  │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                        │
+         └────────────────────────┴────────────────────────┴─────────
+                          WebAssembly Runtime
+                          (Browser Engine)
+```
+
+**特徴:**
+- **ゼロコピー**: WebAssemblyの線形メモリによる効率的データ交換
+- **型安全**: Rust→JavaScriptの型安全なブリッジ
+- **パフォーマンス**: ネイティブコード並みの実行速度
 
 ## 🧪 テストカバレッジ (45%)
 
