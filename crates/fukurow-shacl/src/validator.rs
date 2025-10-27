@@ -8,15 +8,16 @@ use fukurow_sparql::parser::{Iri, Literal, Term};
 use std::collections::{HashMap, HashSet};
 
 /// Validation Configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ValidationConfig {
     pub mode: ValidationMode,
     pub report_jsonld: bool,
 }
 
 /// Validation Mode
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum ValidationMode {
+    #[default]
     FailFast,  // 最初の違反で停止
     Warn,      // 違反を警告として記録し続ける
     Skip,      // 検証をスキップ
@@ -95,22 +96,18 @@ impl DefaultShaclValidator {
         for node in target_nodes {
             // Node constraints を検証
             for constraint in &shape.constraints {
-                let constraint_results = self.validate_node_constraint(constraint, &node, store)?;
+                let constraint_results = self.validate_node_constraint(constraint, &Iri(node.clone()), store)?;
                 results.extend(constraint_results);
             }
 
             // Property shapes を検証
-            for prop_shape_id in &shape.property_shapes {
-                if let Some(Shape::Property(prop_shape)) = store // TODO: shapes から取得
-                    .all_triples()
-                    .values()
-                    .find(|t| t.triple.subject == prop_shape_id)
-                    .map(|_| None) { // TODO: PropertyShape 取得ロジック
-
-                    let prop_results = self.validate_property_shape(prop_shape, store)?;
-                    results.extend(prop_results);
-                }
-            }
+            // TODO: PropertyShape の取得ロジックを実装
+            // for prop_shape_id in &shape.property_shapes {
+            //     if let Some(prop_shape) = /* PropertyShape 取得ロジック */ {
+            //         let prop_results = self.validate_property_shape(prop_shape, store)?;
+            //         results.extend(prop_results);
+            //     }
+            // }
         }
 
         Ok(results)
@@ -123,8 +120,17 @@ impl DefaultShaclValidator {
         let values = self.get_property_values(&shape.path, store)?;
 
         // Property constraints を検証
+        // Convert String values to Term::Literal for constraint validation
+        let term_values: Vec<Term> = values.into_iter()
+            .map(|v| Term::Literal(Literal {
+                value: v,
+                datatype: None,
+                language: None,
+            }))
+            .collect();
+
         for constraint in &shape.constraints {
-            let constraint_results = self.validate_property_constraint(constraint, &values)?;
+            let constraint_results = self.validate_property_constraint(constraint, &term_values)?;
             results.extend(constraint_results);
         }
 
@@ -142,18 +148,18 @@ impl DefaultShaclValidator {
 
                     for stored_triple in store.all_triples().values().flatten() {
                         let triple = &stored_triple.triple;
-                        if triple.predicate == rdf_type.0 && triple.object == class {
+                        if triple.predicate == rdf_type.0 && triple.object == class.0 {
                         nodes.insert(triple.subject.clone());
                         }
                     }
                 }
                 Target::Node(node) => {
-                    nodes.insert(node.clone());
+                    nodes.insert(node.0.clone());
                 }
                 Target::SubjectsOf(predicate) => {
                     for stored_triple in store.all_triples().values().flatten() {
                         let triple = &stored_triple.triple;
-                        if triple.predicate == predicate {
+                        if triple.predicate == predicate.0 {
                         nodes.insert(triple.subject.clone());
                         }
                     }
@@ -161,7 +167,7 @@ impl DefaultShaclValidator {
                 Target::ObjectsOf(predicate) => {
                     for stored_triple in store.all_triples().values().flatten() {
                         let triple = &stored_triple.triple;
-                        if triple.predicate == predicate {
+                        if triple.predicate == predicate.0 {
                         nodes.insert(triple.object.clone());
                         }
                     }
@@ -211,7 +217,7 @@ impl DefaultShaclValidator {
                 for stored_triple in store.all_triples().values().flatten() {
                     let triple = &stored_triple.triple;
                     if triple.subject == node.0 &&
-                       triple.object == expected_value {
+                       triple.object == *expected_value {
                         found = true;
                         break;
                     }
@@ -225,7 +231,7 @@ impl DefaultShaclValidator {
                         source_constraint_component: Iri("http://www.w3.org/ns/shacl#hasValue".to_string()),
                         source_shape: None,
                         detail: None,
-                        message: Some(format!("Node {} does not have required value {}", node, expected_value.value)),
+                        message: Some(format!("Node {} does not have required value {}", node, expected_value)),
                         severity: ViolationLevel::Violation,
                     });
                 }
@@ -272,7 +278,11 @@ impl DefaultShaclValidator {
                 }
             }
             PropertyConstraint::HasValue(expected_value) => {
-                let has_value = values.iter().any(|v| v == &Term::Literal(expected_value.clone()));
+                let has_value = values.iter().any(|v| v == &Term::Literal(Literal {
+                    value: expected_value.clone(),
+                    datatype: None,
+                    language: None,
+                }));
                 if !has_value {
                     results.push(ValidationResult {
                         focus_node: None,
@@ -281,7 +291,7 @@ impl DefaultShaclValidator {
                         source_constraint_component: Iri("http://www.w3.org/ns/shacl#hasValue".to_string()),
                         source_shape: None,
                         detail: None,
-                        message: Some(format!("Required value {} not found", expected_value.value)),
+                        message: Some(format!("Required value {} not found", expected_value)),
                         severity: ViolationLevel::Violation,
                     });
                 }

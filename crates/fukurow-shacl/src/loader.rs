@@ -1,7 +1,8 @@
 //! SHACL ShapesGraph 読み込み
 
-use fukurow_sparql::parser::{Iri, String, Term};
+use fukurow_sparql::parser::{Iri, Term};
 use fukurow_store::store::RdfStore;
+use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use crate::ShaclError;
@@ -177,7 +178,7 @@ impl ShaclLoader for DefaultShaclLoader {
             let triple = &stored_triple.triple;
 
             // targetClass 関係から Node Shape を検出
-            if triple.predicate == sh_target_class.0.0.as_str() {
+            if triple.predicate == sh_target_class.0.as_str() {
                 let shape_iri = Iri(triple.subject.clone());
                 let class_iri = Iri(triple.object.clone());
 

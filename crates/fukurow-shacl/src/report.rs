@@ -8,7 +8,9 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationReport {
     pub conforms: bool,
+    #[serde(skip)]
     pub results: Vec<ValidationResult>,
+    #[serde(skip)]
     pub shapes_graph: Option<ShapesGraph>,
 }
 
