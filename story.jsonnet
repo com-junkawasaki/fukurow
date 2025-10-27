@@ -403,8 +403,9 @@
         "rdfs_implementation",
         "comprehensive_testing",
         "wasm_enablement",
+        "performance_optimization",
       ],
-      pending_nodes: ["performance_optimization", "production_deployment"],
+      pending_nodes: ["production_deployment"],
       blocked_nodes: [],
     },
 
