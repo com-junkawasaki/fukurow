@@ -1,6 +1,7 @@
 //! Provenance and audit trail management
 
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 

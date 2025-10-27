@@ -127,6 +127,7 @@ mod tests {
     use fukurow_store::store::RdfStore;
     use fukurow_store::provenance::{Provenance, GraphId};
     use fukurow_core::model::Triple;
+    #[cfg(feature = "chrono")]
     use chrono::Utc;
 
     fn create_test_store() -> RdfStore {

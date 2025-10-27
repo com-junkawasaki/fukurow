@@ -19,11 +19,15 @@ json-ld.workspace = true
 iri-string = "0.7"
 uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
 wasm-bindgen = { workspace = true, optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+js-sys = { workspace = true, optional = true }
 
 [features]
-default = ["uuid"]
-wasm-bindgen = ["dep:wasm-bindgen"]
+default = ["uuid", "chrono"]
+wasm-bindgen = ["dep:wasm-bindgen", "dep:js-sys"]
 no-uuid = []
+no-chrono = []
+wasm = ["wasm-bindgen", "no-uuid", "no-chrono"]
 
 [dev-dependencies]
 proptest.workspace = true

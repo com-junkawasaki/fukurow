@@ -15,12 +15,13 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
-chrono.workspace = true
+chrono = { version = "0.4", features = ["serde"], optional = true }
 wasm-bindgen = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["chrono"]
 wasm-bindgen = ["dep:wasm-bindgen", "fukurow-core/wasm-bindgen", "fukurow-store/wasm-bindgen"]
+wasm = ["wasm-bindgen", "fukurow-core/wasm", "fukurow-store/wasm"]
 
 [dev-dependencies]
 criterion = "0.5"
