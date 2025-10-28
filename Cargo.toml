@@ -9,7 +9,6 @@ members = [
     "crates/fukurow-rdfs",
     "crates/fukurow-lite",
     "crates/fukurow-dl",
-    "crates/fukurow-wasm",
     "crates/fukurow-siem",
     "crates/fukurow-engine",
     "crates/fukurow-domain-cyber",

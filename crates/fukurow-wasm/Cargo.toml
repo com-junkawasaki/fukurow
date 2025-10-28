@@ -1,9 +1,9 @@
 [package]
 name = "fukurow-wasm"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/com-junkawasaki/fukurow"
 description = "WebAssembly bindings for Fukurow reasoning engine (browser integration)"
 keywords = ["wasm", "webassembly", "browser", "reasoning", "owl"]
 categories = ["wasm", "api-bindings"]
@@ -22,8 +22,8 @@ json-ld = "0.16"
 iri-string = "0.7"
 lazy_static = "1.4"
 smallvec = "1.13"
-wasm-bindgen = { workspace = true, features = ["serde-serialize"] }
-web-sys = { workspace = true, features = [
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+web-sys = { version = "0.3", features = [
   "console",
   "Window",
   "Document",
@@ -34,9 +34,5 @@ web-sys = { workspace = true, features = [
   "CanvasRenderingContext2d",
   "ImageData",
 ] }
-js-sys.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-thiserror.workspace = true
-anyhow.workspace = true
-console_error_panic_hook.workspace = true
+js-sys = "0.3"
+console_error_panic_hook = "0.1.6"

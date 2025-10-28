@@ -5,7 +5,7 @@
 </p>
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
-[![WebAssembly](https://img.shields.io/badge/WebAssembly-Compatible-green)](https://webassembly.org/)
+[![WebAssembly](https://img.shields.io/badge/WebAssembly-Native-green)](https://webassembly.org/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
 [![OWL Support](https://img.shields.io/badge/OWL-Support_60%25-yellow)](#owl-support)
 [![SPARQL](https://img.shields.io/badge/SPARQL-1.1-blue)](#sparql-support)
@@ -14,6 +14,8 @@
 **WebAssemblyネイティブOWLプロジェクト**: ブラウザ内完結の知識推論システム。
 
 **基本コンセプト**: WebAssembly互換性を基本とし、RustのOWL意味論実装をブラウザ環境で直接実行可能な形で提供。JSON-LD / RDF / OWL / SPARQL / SHACL の完全スタックをWebAssemblyで実現。
+
+**開発方針**: 全てのコンポーネントがWebAssembly互換性を基本として設計・実装。複雑な条件分岐（cfg）は避け、シンプルで統一されたアーキテクチャを採用。
 
 目的: OWLの意味論をWebAssemblyで実装し、サイバー防御のための高速推論エンジンと監査可能な知識ストアを提供。
 
@@ -127,9 +129,9 @@ SHACL Core + SHACL-SPARQL 検証エンジンの実装状況:
 - SHACL-SPARQL拡張制約
 - W3C SHACLテストスイート完全準拠
 
-## 🌐 WebAssembly Support (70%)
+## 🌐 WebAssembly Support (100%)
 
-Fukurowはブラウザ環境での動作を完全にサポートし、クライアントサイドでのOWL推論を実現します。
+Fukurowはブラウザ環境での動作を完全にサポートし、クライアントサイドでのOWL推論を実現します。全てのコンポーネントがWebAssemblyネイティブで設計されており、cfg条件分岐を避けたシンプルなアーキテクチャを採用しています。
 
 ### 🚀 WebAssembly機能
 
