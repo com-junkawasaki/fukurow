@@ -20,7 +20,7 @@ pub enum QueryResult {
 /// 実行エンジントレイト
 pub trait SparqlEvaluator {
     fn evaluate(&self, algebra: &Algebra, store: &RdfStore) -> Result<QueryResult, crate::SparqlError>;
-    fn evaluate_query(&self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError>;
+    fn evaluate_query(&mut self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError>;
 }
 
 /// Prefix resolver for handling prefixed names
@@ -35,7 +35,10 @@ impl PrefixResolver {
     }
 
     pub fn resolve(&self, prefix: &str, local: &str) -> Option<String> {
-        self.prefixes.get(prefix).map(|iri| format!("{}{}", iri.0, local))
+        println!("DEBUG: Resolving {}:{}", prefix, local);
+        let result = self.prefixes.get(prefix).map(|iri| format!("{}{}", iri.0, local));
+        println!("DEBUG: Resolved to: {:?}", result);
+        result
     }
 }
 
@@ -65,8 +68,8 @@ impl Default for DefaultSparqlEvaluator {
 }
 
 impl SparqlEvaluator for DefaultSparqlEvaluator {
-    fn evaluate_query(&self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError> {
-        // Create evaluator with prefixes (add default prefixes)
+    fn evaluate_query(&mut self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError> {
+        // Set up prefixes (add default prefixes)
         let mut prefixes = query.prefixes.clone();
         // Add default RDF prefix if not present
         if !prefixes.contains_key("rdf") {
@@ -76,13 +79,8 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
             prefixes.insert("rdfs".to_string(), crate::parser::Iri("http://www.w3.org/2000/01/rdf-schema#".to_string()));
         }
 
-        let evaluator = if !prefixes.is_empty() {
-            println!("DEBUG: Creating evaluator with prefixes: {:?}", prefixes);
-            Self::with_prefixes(prefixes)
-        } else {
-            println!("DEBUG: Creating evaluator without prefixes");
-            Self::new()
-        };
+        println!("DEBUG: Setting up prefixes: {:?}", prefixes);
+        self.prefix_resolver = Some(PrefixResolver::new(prefixes));
 
         // ASKクエリの特別処理
         if let crate::parser::QueryType::Ask = query.query_type {
@@ -90,7 +88,7 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
             use crate::algebra::PlanBuilder;
             let builder = crate::algebra::DefaultPlanBuilder;
             let algebra = builder.to_algebra(query)?;
-            let result = evaluator.evaluate(&algebra, store)?;
+            let result = self.evaluate(&algebra, store)?;
 
             // ASKは結果が空でない場合にtrue
             match result {
@@ -107,7 +105,7 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
             use crate::algebra::PlanBuilder;
             let builder = crate::algebra::DefaultPlanBuilder;
             let algebra = builder.to_algebra(query)?;
-            let result = evaluator.evaluate(&algebra, store)?;
+            let result = self.evaluate(&algebra, store)?;
 
             match result {
                 QueryResult::Select { bindings, .. } => {
@@ -146,7 +144,7 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
         use crate::algebra::PlanBuilder;
         let builder = crate::algebra::DefaultPlanBuilder;
         let algebra = builder.to_algebra(query)?;
-        evaluator.evaluate(&algebra, store)
+        self.evaluate(&algebra, store)
     }
 
     fn evaluate(&self, algebra: &Algebra, store: &RdfStore) -> Result<QueryResult, crate::SparqlError> {
@@ -439,7 +437,15 @@ impl DefaultSparqlEvaluator {
             Term::Iri(iri) => Some(iri.0.clone()),
             Term::Literal(lit) => Some(lit.value.clone()),
             Term::PrefixedName(prefix, local) => {
-                self.resolve_prefixed_name(prefix, local, prefixes)
+                println!("DEBUG: instantiate_term resolving {}:{}", prefix, local);
+                if let Some(resolver) = &self.prefix_resolver {
+                    let result = resolver.resolve(prefix, local);
+                    println!("DEBUG: instantiate_term resolved to {:?}", result);
+                    result
+                } else {
+                    println!("DEBUG: instantiate_term no resolver");
+                    None
+                }
             }
             Term::BlankNode(_) => None, // Blank nodes not supported in CONSTRUCT for now
         }

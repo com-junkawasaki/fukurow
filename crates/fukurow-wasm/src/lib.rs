@@ -10,6 +10,11 @@ use fukurow_core::model::Triple;
 use fukurow_core::jsonld::{parse_jsonld, serialize_jsonld, jsonld_to_triples};
 use fukurow_lite::{OwlLiteReasoner, OntologyLoader};
 use fukurow_lite::loader::DefaultOntologyLoader;
+// Note: SPARQL and SHACL are disabled for WASM due to logos/mio dependencies
+// use fukurow_sparql::{execute_query as sparql_execute, QueryResult as SparqlResult};
+// use fukurow_shacl::{ShaclValidator, ShaclLoader, ValidationReport};
+// use fukurow_shacl::loader::DefaultShaclLoader;
+// use fukurow_shacl::validator::DefaultShaclValidator;
 
 #[derive(Debug, Deserialize)]
 struct ReasonOptions {
@@ -152,7 +157,7 @@ pub fn reason_owl(input_jsonld: &str, options_json: &str) -> Result<String, JsVa
 
 #[wasm_bindgen]
 pub fn validate_shacl(data_jsonld: &str, shape_jsonld: &str) -> Result<String, JsValue> {
-    // TODO: Implement minimal SHACL validation directly in WASM
+    // TODO: Implement SHACL validation when logos/mio WASM compatibility is resolved
     // For now, return basic conformant result
     let _data = data_jsonld;
     let _shapes = shape_jsonld;
@@ -161,7 +166,7 @@ pub fn validate_shacl(data_jsonld: &str, shape_jsonld: &str) -> Result<String, J
 
 #[wasm_bindgen]
 pub fn query_sparql(data_jsonld: &str, sparql: &str) -> Result<String, JsValue> {
-    // TODO: Implement minimal SPARQL query directly in WASM
+    // TODO: Implement SPARQL query when logos/mio WASM compatibility is resolved
     // For now, return empty results
     let _data = data_jsonld;
     let _sparql = sparql;

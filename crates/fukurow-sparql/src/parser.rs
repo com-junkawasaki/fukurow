@@ -660,6 +660,7 @@ impl SparqlParser for DefaultSparqlParser {
         println!("DEBUG: Parsed variables: {:?}", variables);
         println!("DEBUG: Parsed triples: {:?}", triples);
         println!("DEBUG: Parsed construct triples: {:?}", construct_triples);
+        println!("DEBUG: Parsed prefixes: {:?}", prefixes);
 
         // Set construct templates for CONSTRUCT queries
         let final_query_type = match query_type {

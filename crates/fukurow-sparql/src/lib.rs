@@ -21,7 +21,7 @@ pub use parser::Bindings;
 /// クエリ実行の簡易インターフェース
 pub fn execute_query(query: &str, store: &fukurow_store::store::RdfStore) -> Result<QueryResult, SparqlError> {
     let parser = parser::DefaultSparqlParser;
-    let evaluator = evaluator::DefaultSparqlEvaluator::new();
+    let mut evaluator = evaluator::DefaultSparqlEvaluator::new();
 
     let parsed = parser.parse(query)?;
     evaluator.evaluate_query(&parsed, store)

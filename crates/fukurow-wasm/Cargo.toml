@@ -36,3 +36,6 @@ console_error_panic_hook = "0.1.6"
 fukurow-core = { path = "../fukurow-core" }
 fukurow-store = { path = "../fukurow-store" }
 fukurow-lite = { path = "../fukurow-lite", default-features = false }
+# Note: SPARQL and SHACL are disabled for WASM due to logos/mio dependencies
+# fukurow-sparql = { path = "../fukurow-sparql", default-features = false }
+# fukurow-shacl = { path = "../fukurow-shacl", default-features = false }
