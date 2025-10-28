@@ -6,7 +6,8 @@ use std::time::Instant;
 use tokio::net::TcpListener;
 use tracing::{info, error};
 
-use crate::{routes::create_router, handlers::AppState, monitoring::MonitoringService};
+use crate::{routes::create_router, handlers::AppState};
+use fukurow_observability::HealthMonitor;
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
@@ -29,22 +30,21 @@ impl Default for ServerConfig {
 }
 
 /// Reasoner API server
-pub struct ReasonerServer {
+pub struct ReasonerServer<M: HealthMonitor> {
     config: ServerConfig,
-    app_state: AppState,
+    app_state: AppState<M>,
 }
 
-impl ReasonerServer {
+impl<M: HealthMonitor> ReasonerServer<M> {
     /// Create new server with default configuration
-    pub fn new() -> Self {
-        Self::with_config(ServerConfig::default())
+    pub fn new(monitoring: std::sync::Arc<M>) -> Self {
+        Self::with_config(ServerConfig::default(), monitoring)
     }
 
     /// Create new server with custom configuration
-    pub fn with_config(config: ServerConfig) -> Self {
+    pub fn with_config(config: ServerConfig, monitoring: std::sync::Arc<M>) -> Self {
         let reasoner = ReasonerEngine::new();
         let threat_processor = ThreatProcessor::new();
-        let monitoring = MonitoringService::new();
 
         // Initialize reasoner with default cyber security rules
         // TODO: Implement rule initialization for new fukurow architecture
@@ -52,7 +52,7 @@ impl ReasonerServer {
         let app_state = AppState {
             reasoner: std::sync::Arc::new(reasoner),
             threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
-            monitoring: std::sync::Arc::new(monitoring),
+            monitoring,
             start_time: Instant::now(),
         };
 
@@ -118,14 +118,13 @@ impl Default for ReasonerServer {
 }
 
 /// Create a server with custom reasoner engine
-pub fn create_server_with_reasoner(reasoner: ReasonerEngine, config: ServerConfig) -> ReasonerServer {
+pub fn create_server_with_reasoner<M: HealthMonitor>(reasoner: ReasonerEngine, config: ServerConfig, monitoring: std::sync::Arc<M>) -> ReasonerServer<M> {
     let threat_processor = ThreatProcessor::new();
-    let monitoring = MonitoringService::new();
 
     let app_state = AppState {
         reasoner: std::sync::Arc::new(reasoner),
         threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
-        monitoring: std::sync::Arc::new(monitoring),
+        monitoring,
         start_time: Instant::now(),
     };
 

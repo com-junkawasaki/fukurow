@@ -5,10 +5,12 @@ use axum::{
     Router,
 };
 use tower_http::cors::CorsLayer;
-use crate::{handlers::*, monitoring::routes::monitoring_routes};
+use crate::handlers::*;
+use fukurow_observability::routes::monitoring_routes;
+use fukurow_observability::HealthMonitor;
 
 /// Create the main API router
-pub fn create_router(state: AppState) -> Router {
+pub fn create_router<M: HealthMonitor>(state: AppState<M>) -> Router {
     let monitoring_router = monitoring_routes(state.monitoring.clone());
 
     Router::new()

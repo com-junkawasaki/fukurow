@@ -14,6 +14,7 @@ fukurow-core = "0.1.0"
 fukurow-store = "0.1.0"
 fukurow-engine = "0.1.0"
 fukurow-domain-cyber = "0.1.0"
+fukurow-observability = { path = "../fukurow-observability" }
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true

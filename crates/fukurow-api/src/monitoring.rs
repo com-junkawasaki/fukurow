@@ -1,4 +1,4 @@
-//! Operational monitoring and health checks for Fukurow API
+//! Deprecated - moved to `fukurow-observability` crate.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -9,11 +9,7 @@ use chrono::{DateTime, Utc};
 /// Health check status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum HealthStatus {
-    Up,
-    Down,
-    Degraded,
-}
+pub enum HealthStatus { Up, Down, Degraded }
 
 /// Health check result
 #[derive(Debug, Clone, Serialize, Deserialize)]

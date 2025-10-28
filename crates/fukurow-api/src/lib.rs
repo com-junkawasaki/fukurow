@@ -7,7 +7,7 @@ pub mod routes;
 pub mod handlers;
 pub mod models;
 pub mod server;
-pub mod monitoring;
+// monitoring moved to fukurow-observability
 
 pub use routes::*;
 pub use handlers::*;

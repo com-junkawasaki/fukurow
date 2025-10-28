@@ -9,16 +9,17 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use std::time::Instant;
 
-use crate::{models::*, monitoring::MonitoringService};
+use crate::models::*;
+use fukurow_observability::HealthMonitor;
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
 /// Shared application state
 #[derive(Clone)]
-pub struct AppState {
+pub struct AppState<M: HealthMonitor> {
     pub reasoner: Arc<ReasonerEngine>,
     pub threat_processor: Arc<RwLock<ThreatProcessor>>,
-    pub monitoring: Arc<MonitoringService>,
+    pub monitoring: Arc<M>,
     pub start_time: Instant,
 }
 
