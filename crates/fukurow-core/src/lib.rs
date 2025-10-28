@@ -118,6 +118,149 @@ mod tests {
     }
 
     #[cfg(test)]
+    mod query_tests {
+        use super::*;
+
+        #[test]
+        fn test_graph_query_new() {
+            let query = GraphQuery::new();
+            assert_eq!(query.pattern_count(), 0);
+        }
+
+        #[test]
+        fn test_graph_query_where_clause() {
+            let query = GraphQuery::new()
+                .where_clause(var("s"), var("p"), var("o"))
+                .where_clause(const_val("subject"), var("p2"), var("o2"));
+            assert_eq!(query.pattern_count(), 2);
+        }
+
+        #[test]
+        fn test_graph_query_execute_simple() {
+            let mut store = GraphStore::new();
+            store.add_triple(Triple {
+                subject: "subject".to_string(),
+                predicate: "predicate".to_string(),
+                object: "object".to_string(),
+            });
+
+            let query = GraphQuery::new()
+                .where_clause(var("s"), var("p"), var("o"));
+
+            let results = query.execute(&store);
+            assert_eq!(results.len(), 1);
+            assert_eq!(results[0].get("s"), Some(&"subject".to_string()));
+            assert_eq!(results[0].get("p"), Some(&"predicate".to_string()));
+            assert_eq!(results[0].get("o"), Some(&"object".to_string()));
+        }
+
+        #[test]
+        fn test_graph_query_execute_multiple_patterns() {
+            let mut store = GraphStore::new();
+            store.add_triple(Triple {
+                subject: "s1".to_string(),
+                predicate: "p1".to_string(),
+                object: "o1".to_string(),
+            });
+            store.add_triple(Triple {
+                subject: "s1".to_string(),
+                predicate: "p2".to_string(),
+                object: "o2".to_string(),
+            });
+
+            let query = GraphQuery::new()
+                .where_clause(var("s"), const_val("p1"), const_val("o1"))
+                .where_clause(var("s"), const_val("p2"), const_val("o2"));
+
+            let results = query.execute(&store);
+            assert_eq!(results.len(), 1);
+            assert_eq!(results[0].get("s"), Some(&"s1".to_string()));
+        }
+
+        #[test]
+        fn test_graph_query_execute_with_constants() {
+            let mut store = GraphStore::new();
+            store.add_triple(Triple {
+                subject: "subject".to_string(),
+                predicate: "predicate".to_string(),
+                object: "object".to_string(),
+            });
+            store.add_triple(Triple {
+                subject: "subject".to_string(),
+                predicate: "predicate".to_string(),
+                object: "other".to_string(),
+            });
+
+            let query = GraphQuery::new()
+                .where_clause(const_val("subject"), const_val("predicate"), var("o"));
+
+            let results = query.execute(&store);
+            assert_eq!(results.len(), 2);
+            let objects: Vec<_> = results.iter().map(|r| r.get("o").unwrap()).collect();
+            assert!(objects.contains(&&"object".to_string()));
+            assert!(objects.contains(&&"other".to_string()));
+        }
+
+        #[test]
+        fn test_graph_query_execute_no_match() {
+            let mut store = GraphStore::new();
+            store.add_triple(Triple {
+                subject: "subject".to_string(),
+                predicate: "predicate".to_string(),
+                object: "object".to_string(),
+            });
+
+            let query = GraphQuery::new()
+                .where_clause(const_val("nonexistent"), var("p"), var("o"));
+
+            let results = query.execute(&store);
+            assert_eq!(results.len(), 0);
+        }
+
+        #[test]
+        fn test_graph_query_execute_multiple_results() {
+            let mut store = GraphStore::new();
+            store.add_triple(Triple {
+                subject: "s1".to_string(),
+                predicate: "p".to_string(),
+                object: "o1".to_string(),
+            });
+            store.add_triple(Triple {
+                subject: "s2".to_string(),
+                predicate: "p".to_string(),
+                object: "o1".to_string(),
+            });
+            store.add_triple(Triple {
+                subject: "s1".to_string(),
+                predicate: "p".to_string(),
+                object: "o2".to_string(),
+            });
+
+            let query = GraphQuery::new()
+                .where_clause(var("s"), const_val("p"), var("o"));
+
+            let results = query.execute(&store);
+            assert_eq!(results.len(), 3);
+        }
+
+        #[test]
+        fn test_helper_functions() {
+            let var_pattern = var("test");
+            let const_pattern = const_val("value");
+
+            match var_pattern {
+                PatternValue::Variable(name) => assert_eq!(name, "test"),
+                _ => panic!("Expected Variable"),
+            }
+
+            match const_pattern {
+                PatternValue::Constant(value) => assert_eq!(value, "value"),
+                _ => panic!("Expected Constant"),
+            }
+        }
+    }
+
+    #[cfg(test)]
     mod interned_triple_tests {
         use super::*;
 
@@ -482,6 +625,58 @@ mod tests {
         }
 
         #[test]
+        fn test_find_triples_predicate_only() {
+            let mut store = GraphStore::new();
+
+            store.add_triple(Triple {
+                subject: "subject1".to_string(),
+                predicate: "predicate1".to_string(),
+                object: "object1".to_string(),
+            });
+
+            store.add_triple(Triple {
+                subject: "subject2".to_string(),
+                predicate: "predicate1".to_string(),
+                object: "object2".to_string(),
+            });
+
+            store.add_triple(Triple {
+                subject: "subject1".to_string(),
+                predicate: "predicate2".to_string(),
+                object: "object1".to_string(),
+            });
+
+            let results = store.find_triples(None, Some("predicate1"), None);
+            assert_eq!(results.len(), 2);
+        }
+
+        #[test]
+        fn test_find_triples_object_only() {
+            let mut store = GraphStore::new();
+
+            store.add_triple(Triple {
+                subject: "subject1".to_string(),
+                predicate: "predicate1".to_string(),
+                object: "object1".to_string(),
+            });
+
+            store.add_triple(Triple {
+                subject: "subject2".to_string(),
+                predicate: "predicate2".to_string(),
+                object: "object1".to_string(),
+            });
+
+            store.add_triple(Triple {
+                subject: "subject1".to_string(),
+                predicate: "predicate1".to_string(),
+                object: "object2".to_string(),
+            });
+
+            let results = store.find_triples(None, None, Some("object1"));
+            assert_eq!(results.len(), 2);
+        }
+
+        #[test]
         fn test_to_jsonld() {
             let mut store = GraphStore::new();
 
@@ -542,186 +737,5 @@ mod tests {
             assert!(jsonld.graph.is_some());
             assert_eq!(jsonld.graph.as_ref().unwrap().len(), 1);
         }
-    }
-
-    #[cfg(test)]
-    mod query_tests {
-        use super::*;
-        use crate::query::{GraphQuery, var, const_val};
-
-        #[test]
-        fn test_graph_query_new() {
-            let query = GraphQuery::new();
-            assert_eq!(query.pattern_count(), 0);
-        }
-
-        #[test]
-        fn test_graph_query_where_clause() {
-            let query = GraphQuery::new()
-                .where_clause(
-                    var("s"),
-                    const_val("predicate1"),
-                    var("o")
-                );
-
-            assert_eq!(query.pattern_count(), 1);
-        }
-
-        #[test]
-        fn test_graph_query_execute_simple() {
-            let mut store = GraphStore::new();
-
-            store.add_triple(Triple {
-                subject: "subject1".to_string(),
-                predicate: "predicate1".to_string(),
-                object: "object1".to_string(),
-            });
-
-            let query = GraphQuery::new()
-                .where_clause(
-                    var("s"),
-                    const_val("predicate1"),
-                    var("o")
-                );
-
-            let results = query.execute(&store);
-            assert_eq!(results.len(), 1);
-
-            let binding = &results[0];
-            assert_eq!(binding.get("s"), Some(&"subject1".to_string()));
-            assert_eq!(binding.get("o"), Some(&"object1".to_string()));
-        }
-
-        #[test]
-        fn test_graph_query_execute_multiple_patterns() {
-            let mut store = GraphStore::new();
-
-            store.add_triple(Triple {
-                subject: "subject1".to_string(),
-                predicate: "predicate1".to_string(),
-                object: "object1".to_string(),
-            });
-
-            store.add_triple(Triple {
-                subject: "subject1".to_string(),
-                predicate: "predicate2".to_string(),
-                object: "object2".to_string(),
-            });
-
-            let query = GraphQuery::new()
-                .where_clause(
-                    var("s"),
-                    const_val("predicate1"),
-                    var("o1")
-                )
-                .where_clause(
-                    var("s"),
-                    const_val("predicate2"),
-                    var("o2")
-                );
-
-            let results = query.execute(&store);
-            assert_eq!(results.len(), 1);
-
-            let binding = &results[0];
-            assert_eq!(binding.get("s"), Some(&"subject1".to_string()));
-            assert_eq!(binding.get("o1"), Some(&"object1".to_string()));
-            assert_eq!(binding.get("o2"), Some(&"object2".to_string()));
-        }
-
-        #[test]
-        fn test_graph_query_execute_no_match() {
-            let mut store = GraphStore::new();
-
-            store.add_triple(Triple {
-                subject: "subject1".to_string(),
-                predicate: "predicate1".to_string(),
-                object: "object1".to_string(),
-            });
-
-            let query = GraphQuery::new()
-                .where_clause(
-                    var("s"),
-                    const_val("nonexistent"),
-                    var("o")
-                );
-
-            let results = query.execute(&store);
-            assert_eq!(results.len(), 0);
-        }
-
-        #[test]
-        fn test_graph_query_execute_with_constants() {
-            let mut store = GraphStore::new();
-
-            store.add_triple(Triple {
-                subject: "subject1".to_string(),
-                predicate: "predicate1".to_string(),
-                object: "object1".to_string(),
-            });
-
-            let query = GraphQuery::new()
-                .where_clause(
-                    const_val("subject1"),
-                    const_val("predicate1"),
-                    const_val("object1")
-                );
-
-            let results = query.execute(&store);
-            assert_eq!(results.len(), 1);
-
-            let binding = &results[0];
-            assert_eq!(binding.len(), 0); // No variables to bind
-        }
-
-        #[test]
-        fn test_graph_query_execute_multiple_results() {
-            let mut store = GraphStore::new();
-
-            store.add_triple(Triple {
-                subject: "subject1".to_string(),
-                predicate: "type".to_string(),
-                object: "Person".to_string(),
-            });
-
-            store.add_triple(Triple {
-                subject: "subject2".to_string(),
-                predicate: "type".to_string(),
-                object: "Person".to_string(),
-            });
-
-            let query = GraphQuery::new()
-                .where_clause(
-                    var("person"),
-                    const_val("type"),
-                    const_val("Person")
-                );
-
-            let results = query.execute(&store);
-            assert_eq!(results.len(), 2);
-
-            let persons: std::collections::HashSet<_> = results.iter()
-                .filter_map(|r| r.get("person"))
-                .collect();
-
-            assert!(persons.contains(&"subject1".to_string()));
-            assert!(persons.contains(&"subject2".to_string()));
-        }
-
-        #[test]
-        fn test_helper_functions() {
-            let var_pattern = var("test_var");
-            match var_pattern {
-                PatternValue::Variable(v) => assert_eq!(v, "test_var"),
-                _ => panic!("Expected variable"),
-            }
-
-            let const_pattern = const_val("test_const");
-            match const_pattern {
-                PatternValue::Constant(c) => assert_eq!(c, "test_const"),
-                _ => panic!("Expected constant"),
-            }
-        }
-
     }
 }

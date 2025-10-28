@@ -295,6 +295,74 @@ mod tests {
     }
 
     #[test]
+    fn test_find_triples_by_subject_only() {
+        let mut store = RdfStore::new();
+
+        store.insert(Triple { subject: "subject1".to_string(), predicate: "p1".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "subject1".to_string(), predicate: "p2".to_string(), object: "o2".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "subject2".to_string(), predicate: "p1".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        let results = store.find_triples(Some("subject1"), None, None);
+        assert_eq!(results.len(), 2);
+        for stored in results {
+            assert_eq!(stored.triple.subject, "subject1");
+        }
+    }
+
+    #[test]
+    fn test_find_triples_by_predicate_only() {
+        let mut store = RdfStore::new();
+
+        store.insert(Triple { subject: "s1".to_string(), predicate: "predicate1".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s2".to_string(), predicate: "predicate1".to_string(), object: "o2".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s1".to_string(), predicate: "predicate2".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        let results = store.find_triples(None, Some("predicate1"), None);
+        assert_eq!(results.len(), 2);
+        for stored in results {
+            assert_eq!(stored.triple.predicate, "predicate1");
+        }
+    }
+
+    #[test]
+    fn test_find_triples_by_object_only() {
+        let mut store = RdfStore::new();
+
+        store.insert(Triple { subject: "s1".to_string(), predicate: "p1".to_string(), object: "object1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s2".to_string(), predicate: "p2".to_string(), object: "object1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s1".to_string(), predicate: "p1".to_string(), object: "object2".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        let results = store.find_triples(None, None, Some("object1"));
+        assert_eq!(results.len(), 2);
+        for stored in results {
+            assert_eq!(stored.triple.object, "object1");
+        }
+    }
+
+    #[test]
+    fn test_find_triples_all() {
+        let mut store = RdfStore::new();
+
+        store.insert(Triple { subject: "s1".to_string(), predicate: "p1".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s2".to_string(), predicate: "p2".to_string(), object: "o2".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        let results = store.find_triples(None, None, None);
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_store_statistics() {
+        let mut store = RdfStore::new();
+
+        store.insert(Triple { subject: "s1".to_string(), predicate: "p1".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s2".to_string(), predicate: "p2".to_string(), object: "o2".to_string() }, GraphId::Named("graph1".to_string()), Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        let stats = store.statistics();
+        assert_eq!(stats.total_triples, 2);
+        assert_eq!(stats.graph_count, 2);
+    }
+
+    #[test]
     fn test_all_triples() {
         let mut store = RdfStore::new();
         let triple1 = Triple { subject: "s1".to_string(), predicate: "p1".to_string(), object: "o1".to_string() };
