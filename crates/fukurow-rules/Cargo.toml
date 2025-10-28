@@ -10,6 +10,7 @@ keywords = ["rules", "validation", "shacl", "reasoning", "constraints"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
+fukurow-core = "0.2.0"
 fukurow-store = { path = "../fukurow-store" }
 serde.workspace = true
 serde_json.workspace = true

@@ -10,6 +10,7 @@ keywords = ["reasoning", "inference", "engine", "orchestration", "knowledge-grap
 categories = ["algorithms", "concurrency"]
 
 [dependencies]
+fukurow-core = "0.2.0"
 fukurow-store = { path = "../fukurow-store" }
 fukurow-rules = { path = "../fukurow-rules" }
 fukurow-rdfs = { path = "../fukurow-rdfs" }
