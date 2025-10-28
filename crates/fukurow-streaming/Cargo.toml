@@ -9,11 +9,16 @@ description = "Real-time streaming processing for Fukurow reasoning engine"
 keywords = ["streaming", "kafka", "nats", "redis", "realtime"]
 
 [dependencies]
-fukurow-core = "0.1.0"
+fukurow-core = { path = "../fukurow-core" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+futures.workspace = true
 # Optional backends
 rdkafka = { version = "0.35", features = ["tokio"], optional = true }
 async-nats = { version = "0.33", optional = true }

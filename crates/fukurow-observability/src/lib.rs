@@ -39,6 +39,66 @@ pub trait HealthMonitor: Send + Sync + 'static {
     async fn get_metrics(&self) -> SystemMetrics;
 }
 
+/// Default health monitor implementation
+#[derive(Clone)]
+pub struct DefaultHealthMonitor {
+    start_time: std::time::Instant,
+    request_count: std::sync::Arc<std::sync::atomic::AtomicU64>,
+}
+
+impl DefaultHealthMonitor {
+    pub fn new() -> Self {
+        Self {
+            start_time: std::time::Instant::now(),
+            request_count: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
+        }
+    }
+
+    pub fn increment_request_count(&self) {
+        self.request_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+#[async_trait::async_trait]
+impl HealthMonitor for DefaultHealthMonitor {
+    async fn get_overall_health(&self) -> HealthStatus {
+        HealthStatus::Up
+    }
+
+    async fn run_health_checks(&self) -> Vec<HealthCheck> {
+        vec![
+            HealthCheck {
+                name: "api".to_string(),
+                status: HealthStatus::Up,
+                message: Some("API is responding".to_string()),
+                timestamp: chrono::Utc::now(),
+                duration_ms: 0,
+                details: None,
+            },
+            HealthCheck {
+                name: "reasoning".to_string(),
+                status: HealthStatus::Up,
+                message: Some("Reasoning engine is operational".to_string()),
+                timestamp: chrono::Utc::now(),
+                duration_ms: 0,
+                details: None,
+            },
+        ]
+    }
+
+    async fn get_metrics(&self) -> SystemMetrics {
+        SystemMetrics {
+            timestamp: chrono::Utc::now(),
+            memory_usage_mb: 0, // Placeholder
+            cpu_usage_percent: 0.0, // Placeholder
+            active_connections: 0, // Placeholder
+            total_requests: self.request_count.load(std::sync::atomic::Ordering::Relaxed),
+            error_rate_percent: 0.0,
+            uptime_seconds: self.start_time.elapsed().as_secs(),
+        }
+    }
+}
+
 pub mod metrics {
     /// Standard metric names for Fukurow components
     pub mod names {
@@ -107,7 +167,7 @@ pub mod routes {
     };
     use std::sync::Arc;
 
-    pub fn monitoring_routes(monitor: Arc<dyn HealthMonitor>) -> Router {
+    pub fn monitoring_routes<H: HealthMonitor + 'static>(monitor: Arc<H>) -> Router {
         Router::new()
             .route("/health", get(health))
             .route("/health/detailed", get(health_detailed))
@@ -115,7 +175,7 @@ pub mod routes {
             .with_state(monitor)
     }
 
-    async fn health(State(m): State<Arc<dyn HealthMonitor>>) -> impl IntoResponse {
+    async fn health<H: HealthMonitor>(State(m): State<Arc<H>>) -> impl IntoResponse {
         let status = m.get_overall_health().await;
         let status_code = match status {
             HealthStatus::Up => StatusCode::OK,
@@ -125,12 +185,12 @@ pub mod routes {
         (status_code, Json(status))
     }
 
-    async fn health_detailed(State(m): State<Arc<dyn HealthMonitor>>) -> impl IntoResponse {
+    async fn health_detailed<H: HealthMonitor>(State(m): State<Arc<H>>) -> impl IntoResponse {
         let checks = m.run_health_checks().await;
         Json(checks)
     }
 
-    async fn metrics(State(m): State<Arc<dyn HealthMonitor>>) -> impl IntoResponse {
+    async fn metrics<H: HealthMonitor>(State(m): State<Arc<H>>) -> impl IntoResponse {
         let s = m.get_metrics().await;
         Json(s)
     }

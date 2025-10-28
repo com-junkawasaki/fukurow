@@ -14,10 +14,22 @@ fukurow-core = { path = "../fukurow-core" }
 fukurow-store = { path = "../fukurow-store" }
 fukurow-engine = { path = "../fukurow-engine" }
 fukurow-domain-cyber = { path = "../fukurow-domain-cyber" }
+fukurow-observability = { path = "../fukurow-observability" }
+fukurow-streaming = { path = "../fukurow-streaming" }
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+hyper.workspace = true
+reqwest.workspace = true
+uuid.workspace = true
 
 [features]
 default = []

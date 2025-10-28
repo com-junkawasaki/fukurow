@@ -120,11 +120,11 @@ async fn test_processing_stats_creation() {
 
 #[test]
 fn test_engine_error_variants() {
-    let rule_err = EngineError::RuleError(fukurow_rules::RuleError::ConfigurationError("test".to_string()));
-    assert!(rule_err.to_string().contains("Rule execution failed"));
+    let rule_err = EngineError::RuleError(fukurow_rules::RuleError::ConfigurationError { message: "test".to_string() });
+    assert!(rule_err.to_string().contains("Invalid rule configuration"));
 
-    let rdfs_err = EngineError::RdfsError(fukurow_rdfs::RdfsError::InferenceError("test".to_string()));
-    assert!(rdfs_err.to_string().contains("RDFS reasoning failed"));
+    let rdfs_err = EngineError::RdfsError(fukurow_rdfs::RdfsError::InvalidTriple("test".to_string()));
+    assert!(rdfs_err.to_string().contains("Invalid RDFS triple"));
 
     let timeout_err = EngineError::TimeoutError(5000);
     assert!(timeout_err.to_string().contains("5000ms"));

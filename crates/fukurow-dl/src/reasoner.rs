@@ -241,4 +241,544 @@ mod tests {
         assert_eq!(dl_ontology.classes, lite_ontology.classes);
         assert_eq!(dl_ontology.individuals, lite_ontology.individuals);
     }
+
+    #[test]
+    fn test_intersection_of_reasoning() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create intersection class: Person ∩ Mammal
+        let triples = vec![
+            // Define classes
+            Triple {
+                subject: "http://example.org/Person".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Mammal".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            // Define intersection class
+            Triple {
+                subject: "http://example.org/Human".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Human".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#intersectionOf".to_string(),
+                object: "http://example.org/HumanList".to_string(),
+            },
+            // List: Person AND Mammal
+            Triple {
+                subject: "http://example.org/HumanList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/HumanList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest".to_string(),
+                object: "http://example.org/MammalList".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/MammalList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first".to_string(),
+                object: "http://example.org/Mammal".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/MammalList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest".to_string(),
+                object: "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil".to_string(),
+            },
+            // Individual
+            Triple {
+                subject: "http://example.org/alice".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/alice".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/alice".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/Mammal".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // Alice should be inferred to be a Human (Person ∩ Mammal)
+        let alice = Individual(OwlIri::new("http://example.org/alice".to_string()));
+        let human_class = ClassExpression::IntersectionOf(vec![
+            ClassExpression::Named(OwlIri::new("http://example.org/Person".to_string())),
+            ClassExpression::Named(OwlIri::new("http://example.org/Mammal".to_string())),
+        ]);
+
+        let is_instance = reasoner.is_instance_of(&ontology, &alice, &human_class).unwrap();
+        assert!(is_instance, "Alice should be an instance of Person ∩ Mammal");
+    }
+
+    #[test]
+    fn test_union_of_reasoning() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create union class: Student ∪ Employee
+        let triples = vec![
+            Triple {
+                subject: "http://example.org/Student".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Employee".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            // Define union class
+            Triple {
+                subject: "http://example.org/Person".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Person".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#unionOf".to_string(),
+                object: "http://example.org/PersonList".to_string(),
+            },
+            // List: Student OR Employee
+            Triple {
+                subject: "http://example.org/PersonList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first".to_string(),
+                object: "http://example.org/Student".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/PersonList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest".to_string(),
+                object: "http://example.org/EmployeeList".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/EmployeeList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first".to_string(),
+                object: "http://example.org/Employee".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/EmployeeList".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest".to_string(),
+                object: "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil".to_string(),
+            },
+            // Individual who is a Student
+            Triple {
+                subject: "http://example.org/bob".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/bob".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/Student".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // Bob should be inferred to be a Person (Student ∪ Employee)
+        let bob = Individual(OwlIri::new("http://example.org/bob".to_string()));
+        let person_class = ClassExpression::UnionOf(vec![
+            ClassExpression::Named(OwlIri::new("http://example.org/Student".to_string())),
+            ClassExpression::Named(OwlIri::new("http://example.org/Employee".to_string())),
+        ]);
+
+        let is_instance = reasoner.is_instance_of(&ontology, &bob, &person_class).unwrap();
+        assert!(is_instance, "Bob should be an instance of Student ∪ Employee");
+    }
+
+    #[test]
+    fn test_complement_of_reasoning() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create complement class: ¬Student
+        let triples = vec![
+            Triple {
+                subject: "http://example.org/Student".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Person".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            // Define complement class
+            Triple {
+                subject: "http://example.org/NonStudent".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/NonStudent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#complementOf".to_string(),
+                object: "http://example.org/Student".to_string(),
+            },
+            // Individual who is a Person but not a Student
+            Triple {
+                subject: "http://example.org/charlie".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/charlie".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // Charlie should be inferred to be a NonStudent (¬Student)
+        let charlie = Individual(OwlIri::new("http://example.org/charlie".to_string()));
+        let non_student_class = ClassExpression::ComplementOf(Box::new(
+            ClassExpression::Named(OwlIri::new("http://example.org/Student".to_string()))
+        ));
+
+        let is_instance = reasoner.is_instance_of(&ontology, &charlie, &non_student_class).unwrap();
+        assert!(is_instance, "Charlie should be an instance of ¬Student");
+    }
+
+    #[test]
+    fn test_some_values_from_reasoning() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create someValuesFrom restriction: ∃hasChild.Person
+        let triples = vec![
+            Triple {
+                subject: "http://example.org/Person".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/hasChild".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#ObjectProperty".to_string(),
+            },
+            // Define restriction class
+            Triple {
+                subject: "http://example.org/Parent".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Restriction".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Parent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#onProperty".to_string(),
+                object: "http://example.org/hasChild".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/Parent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#someValuesFrom".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+            // Individual with child relationship
+            Triple {
+                subject: "http://example.org/david".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/david".to_string(),
+                predicate: "http://example.org/hasChild".to_string(),
+                object: "http://example.org/emma".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/emma".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/emma".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // David should be inferred to be a Parent (∃hasChild.Person)
+        let david = Individual(OwlIri::new("http://example.org/david".to_string()));
+        let parent_class = ClassExpression::SomeValuesFrom {
+            property: PropertyExpression::ObjectProperty(OwlIri::new("http://example.org/hasChild".to_string())),
+            class: Box::new(ClassExpression::Named(OwlIri::new("http://example.org/Person".to_string()))),
+        };
+
+        let is_instance = reasoner.is_instance_of(&ontology, &david, &parent_class).unwrap();
+        assert!(is_instance, "David should be an instance of ∃hasChild.Person");
+    }
+
+    #[test]
+    fn test_all_values_from_reasoning() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create allValuesFrom restriction: ∀hasChild.Person
+        let triples = vec![
+            Triple {
+                subject: "http://example.org/Person".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Class".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/hasChild".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#ObjectProperty".to_string(),
+            },
+            // Define restriction class
+            Triple {
+                subject: "http://example.org/GoodParent".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Restriction".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/GoodParent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#onProperty".to_string(),
+                object: "http://example.org/hasChild".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/GoodParent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#allValuesFrom".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+            // Individual with only Person children
+            Triple {
+                subject: "http://example.org/eve".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/eve".to_string(),
+                predicate: "http://example.org/hasChild".to_string(),
+                object: "http://example.org/fiona".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/fiona".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/fiona".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/Person".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // Eve should be inferred to be a GoodParent (∀hasChild.Person)
+        let eve = Individual(OwlIri::new("http://example.org/eve".to_string()));
+        let good_parent_class = ClassExpression::AllValuesFrom {
+            property: PropertyExpression::ObjectProperty(OwlIri::new("http://example.org/hasChild".to_string())),
+            class: Box::new(ClassExpression::Named(OwlIri::new("http://example.org/Person".to_string()))),
+        };
+
+        let is_instance = reasoner.is_instance_of(&ontology, &eve, &good_parent_class).unwrap();
+        assert!(is_instance, "Eve should be an instance of ∀hasChild.Person");
+    }
+
+    #[test]
+    fn test_has_value_reasoning() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create hasValue restriction: ∃hasChild.{john}
+        let john = Individual(OwlIri::new("http://example.org/john".to_string()));
+        let triples = vec![
+            Triple {
+                subject: "http://example.org/hasChild".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#ObjectProperty".to_string(),
+            },
+            // Define restriction class
+            Triple {
+                subject: "http://example.org/JohnsParent".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Restriction".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/JohnsParent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#onProperty".to_string(),
+                object: "http://example.org/hasChild".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/JohnsParent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#hasValue".to_string(),
+                object: "http://example.org/john".to_string(),
+            },
+            // Individual with john as child
+            Triple {
+                subject: "http://example.org/mary".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/mary".to_string(),
+                predicate: "http://example.org/hasChild".to_string(),
+                object: "http://example.org/john".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/john".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // Mary should be inferred to be a JohnsParent (∃hasChild.{john})
+        let mary = Individual(OwlIri::new("http://example.org/mary".to_string()));
+        let johns_parent_class = ClassExpression::HasValue {
+            property: PropertyExpression::ObjectProperty(OwlIri::new("http://example.org/hasChild".to_string())),
+            individual: fukurow_lite::model::Individual(OwlIri::new("http://example.org/john".to_string())),
+        };
+
+        let is_instance = reasoner.is_instance_of(&ontology, &mary, &johns_parent_class).unwrap();
+        assert!(is_instance, "Mary should be an instance of ∃hasChild.{{specific individual}}");
+    }
+
+    #[test]
+    fn test_cardinality_restrictions() {
+        let mut store = RdfStore::new();
+        let graph_id = GraphId::Named("test".to_string());
+        let provenance = Provenance::Sensor {
+            source: "test".to_string(),
+            confidence: Some(1.0),
+        };
+
+        // Create minCardinality restriction: ≥2 hasChild
+        let triples = vec![
+            Triple {
+                subject: "http://example.org/hasChild".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#ObjectProperty".to_string(),
+            },
+            // Define restriction class
+            Triple {
+                subject: "http://example.org/MultiChildParent".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#Restriction".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/MultiChildParent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#onProperty".to_string(),
+                object: "http://example.org/hasChild".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/MultiChildParent".to_string(),
+                predicate: "http://www.w3.org/2002/07/owl#minCardinality".to_string(),
+                object: "2".to_string(),
+            },
+            // Individual with 2 children
+            Triple {
+                subject: "http://example.org/george".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/george".to_string(),
+                predicate: "http://example.org/hasChild".to_string(),
+                object: "http://example.org/harry".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/george".to_string(),
+                predicate: "http://example.org/hasChild".to_string(),
+                object: "http://example.org/ian".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/harry".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+            Triple {
+                subject: "http://example.org/ian".to_string(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
+            },
+        ];
+
+        for triple in triples {
+            store.insert(triple, graph_id.clone(), provenance.clone());
+        }
+
+        let mut reasoner = OwlDlReasoner::new();
+        let ontology = reasoner.load_ontology(&store).unwrap();
+
+        // George should be inferred to be a MultiChildParent (≥2 hasChild)
+        let george = Individual(OwlIri::new("http://example.org/george".to_string()));
+        let multi_child_parent_class = ClassExpression::MinCardinality {
+            cardinality: 2,
+            property: PropertyExpression::ObjectProperty(OwlIri::new("http://example.org/hasChild".to_string())),
+            class: None, // None means owl:Thing
+        };
+
+        let is_instance = reasoner.is_instance_of(&ontology, &george, &multi_child_parent_class).unwrap();
+        assert!(is_instance, "George should be an instance of ≥2 hasChild");
+    }
 }
