@@ -10,6 +10,7 @@ members = [
     "crates/fukurow-api",
     "crates/fukurow-observability",
     "crates/fukurow-streaming",
+    "crates/fukurow-wasm",
     "tests"
 ]
 resolver = "2"

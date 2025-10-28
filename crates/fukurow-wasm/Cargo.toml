@@ -4,12 +4,17 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/com-junkawasaki/fukurow"
-description = "WebAssembly bindings for Fukurow reasoning engine (browser integration)"
-keywords = ["wasm", "webassembly", "browser", "reasoning", "owl"]
+description = "Headless WebAssembly bindings for Fukurow reasoning engine"
+keywords = ["wasm", "webassembly", "reasoning", "owl"]
 categories = ["wasm", "api-bindings"]
 
 [lib]
 crate-type = ["cdylib"]
+
+[features]
+default = ["headless"]
+headless = []
+browser = ["web-sys"]
 
 [dependencies]
 # Core RDF processing (WebAssembly compatible)
@@ -23,16 +28,6 @@ iri-string = "0.7"
 lazy_static = "1.4"
 smallvec = "1.13"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
-web-sys = { version = "0.3", features = [
-  "console",
-  "Window",
-  "Document",
-  "Element",
-  "HtmlElement",
-  "HtmlCanvasElement",
-  "Node",
-  "CanvasRenderingContext2d",
-  "ImageData",
-] }
+web-sys = { version = "0.3", optional = true, features = [] }
 js-sys = "0.3"
 console_error_panic_hook = "0.1.6"

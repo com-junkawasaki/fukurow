@@ -14,6 +14,13 @@ pub struct ShapesGraph {
     pub prefixes: HashMap<String, String>,
 }
 
+impl ShapesGraph {
+    /// 指定されたIDのShapeを取得
+    pub fn get_shape(&self, id: &Iri) -> Option<&Shape> {
+        self.shapes.get(id)
+    }
+}
+
 /// Shape (Node Shape or Property Shape)
 #[derive(Debug, Clone)]
 pub enum Shape {
@@ -86,6 +93,8 @@ pub enum NodeConstraint {
 /// Property Constraints
 #[derive(Debug, Clone)]
 pub enum PropertyConstraint {
+    Class(Iri),
+    Datatype(Iri),
     MinCount(u64),
     MaxCount(u64),
     QualifiedValueShape {
@@ -262,20 +271,57 @@ impl ShaclLoader for DefaultShaclLoader {
                 }
             }
 
-            // datatype 制約を検出
+            // Property path を検出
+            if triple.predicate == sh_path.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let path_iri = Iri(triple.object.clone());
+
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                    Shape::Property(PropertyShape {
+                        id: shape_iri.clone(),
+                        path: PropertyPath::Predicate(path_iri.clone()),
+                        constraints: vec![],
+                    })
+                );
+
+                if let Shape::Property(prop_shape) = shape {
+                    prop_shape.path = PropertyPath::Predicate(path_iri);
+                }
+            }
+
+            // Property class 制約を検出
+            if triple.predicate == sh_class.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let class_iri = Iri(triple.object.clone());
+
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                    Shape::Property(PropertyShape {
+                        id: shape_iri.clone(),
+                        path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())), // TODO: path取得
+                        constraints: vec![],
+                    })
+                );
+
+                if let Shape::Property(prop_shape) = shape {
+                    prop_shape.constraints.push(PropertyConstraint::Class(class_iri.clone()));
+                }
+            }
+
+            // datatype 制約を検出 (PropertyShape用)
             if triple.predicate == sh_datatype.0.as_str() {
                 let shape_iri = Iri(triple.subject.clone());
                 let datatype_iri = Iri(triple.object.clone());
 
-                let shape = shapes.entry(shape_iri.clone()).or_insert_with(|| Shape::Node(NodeShape {
-                    id: shape_iri.clone(),
-                    targets: vec![],
-                    constraints: vec![],
-                    property_shapes: vec![],
-                }));
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                    Shape::Property(PropertyShape {
+                        id: shape_iri.clone(),
+                        path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())),
+                        constraints: vec![],
+                    })
+                );
 
-                if let Shape::Node(node_shape) = shape {
-                    node_shape.constraints.push(NodeConstraint::Datatype(datatype_iri.clone()));
+                if let Shape::Property(prop_shape) = shape {
+                    prop_shape.constraints.push(PropertyConstraint::Datatype(datatype_iri.clone()));
                 }
             }
 

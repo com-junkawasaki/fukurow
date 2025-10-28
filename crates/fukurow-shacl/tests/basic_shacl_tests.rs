@@ -132,7 +132,7 @@ fn test_shacl_datatype_constraint() {
     store.insert(Triple {
         subject: "http://example.org/John".to_string(),
         predicate: "http://example.org/age".to_string(),
-        object: "25".to_string(), // Should be integer, but stored as string
+        object: "thirty".to_string(), // Not a valid integer
     }, default_graph_id(), sensor_provenance());
 
     // Add SHACL shape requiring integer datatype
