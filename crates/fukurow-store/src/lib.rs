@@ -15,10 +15,12 @@ pub mod store;
 pub mod provenance;
 pub mod persistence;
 pub mod adapter;
+pub mod timeseriesdb;
 
 pub use store::*;
 pub use provenance::*;
 pub use persistence::*;
+pub use timeseriesdb::*;
 
 // Re-export for tests
 #[cfg(test)]

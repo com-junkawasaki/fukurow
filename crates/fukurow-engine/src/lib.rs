@@ -6,10 +6,12 @@
 pub mod engine;
 pub mod orchestration;
 pub mod pipeline;
+pub mod scaling;
 
 pub use engine::*;
 pub use orchestration::*;
 pub use pipeline::*;
+pub use scaling::*;
 
 #[cfg(test)]
 mod tests {

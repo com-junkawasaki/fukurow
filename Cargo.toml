@@ -16,7 +16,7 @@ members = [
     "crates/fukurow-observability",
     "crates/fukurow-api",
     "crates/fukurow-cli"
-]
+, "crates/fukurow-operator", "crates/crates/fukurow-streaming"]
 resolver = "2"
 
 [workspace.package]
