@@ -325,6 +325,67 @@ impl ShaclLoader for DefaultShaclLoader {
                 }
             }
 
+            // minLength 制約を検出 (PropertyShape用)
+            if triple.predicate == sh_min_length.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let length_str = triple.object.clone();
+
+                if let Some(length) = length_str.parse::<u64>().ok() {
+                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                        Shape::Property(PropertyShape {
+                            id: shape_iri.clone(),
+                            path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())),
+                            constraints: vec![],
+                        })
+                    );
+
+                    if let Shape::Property(prop_shape) = shape {
+                        prop_shape.constraints.push(PropertyConstraint::MinLength(length));
+                    }
+                }
+            }
+
+            // maxLength 制約を検出 (PropertyShape用)
+            if triple.predicate == sh_max_length.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let length_str = triple.object.clone();
+
+                if let Some(length) = length_str.parse::<u64>().ok() {
+                    let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                        Shape::Property(PropertyShape {
+                            id: shape_iri.clone(),
+                            path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())),
+                            constraints: vec![],
+                        })
+                    );
+
+                    if let Shape::Property(prop_shape) = shape {
+                        prop_shape.constraints.push(PropertyConstraint::MaxLength(length));
+                    }
+                }
+            }
+
+            // pattern 制約を検出 (PropertyShape用)
+            if triple.predicate == sh_pattern.0.as_str() {
+                let shape_iri = Iri(triple.subject.clone());
+                let pattern_str = triple.object.clone();
+
+                let shape = shapes.entry(shape_iri.clone()).or_insert_with(||
+                    Shape::Property(PropertyShape {
+                        id: shape_iri.clone(),
+                        path: PropertyPath::Predicate(Iri("http://example.org/predicate".to_string())),
+                        constraints: vec![],
+                    })
+                );
+
+                if let Shape::Property(prop_shape) = shape {
+                    prop_shape.constraints.push(PropertyConstraint::Pattern {
+                        pattern: pattern_str,
+                        flags: None, // TODO: flags support
+                    });
+                }
+            }
+
             // class 制約を検出
             if triple.predicate == sh_class.0.as_str() {
                 let shape_iri = Iri(triple.subject.clone());

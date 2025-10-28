@@ -247,6 +247,56 @@ impl DefaultShaclValidator {
                     });
                 }
             }
+            PropertyConstraint::MinLength(min_length) => {
+                for value in values {
+                    if value.len() < *min_length as usize {
+                        results.push(ValidationResult {
+                            focus_node: Some(Iri(focus_node.to_string())),
+                            result_path: Some(Iri("http://example.org/property".to_string())), // TODO: get actual path
+                            value: Some(value.to_string()),
+                            source_constraint_component: Iri("http://www.w3.org/ns/shacl#minLength".to_string()),
+                            source_shape: None,
+                            detail: None,
+                            message: Some(format!("Value '{}' has length {}, minimum is {}", value, value.len(), min_length)),
+                            severity: ViolationLevel::Violation,
+                        });
+                    }
+                }
+            }
+            PropertyConstraint::MaxLength(max_length) => {
+                for value in values {
+                    if value.len() > *max_length as usize {
+                        results.push(ValidationResult {
+                            focus_node: Some(Iri(focus_node.to_string())),
+                            result_path: Some(Iri("http://example.org/property".to_string())), // TODO: get actual path
+                            value: Some(value.to_string()),
+                            source_constraint_component: Iri("http://www.w3.org/ns/shacl#maxLength".to_string()),
+                            source_shape: None,
+                            detail: None,
+                            message: Some(format!("Value '{}' has length {}, maximum is {}", value, value.len(), max_length)),
+                            severity: ViolationLevel::Violation,
+                        });
+                    }
+                }
+            }
+            PropertyConstraint::Pattern { pattern, flags: _ } => {
+                for value in values {
+                    if let Ok(regex) = regex::Regex::new(&pattern) {
+                        if !regex.is_match(value) {
+                            results.push(ValidationResult {
+                                focus_node: Some(Iri(focus_node.to_string())),
+                                result_path: Some(Iri("http://example.org/property".to_string())), // TODO: get actual path
+                                value: Some(value.to_string()),
+                                source_constraint_component: Iri("http://www.w3.org/ns/shacl#pattern".to_string()),
+                                source_shape: None,
+                                detail: None,
+                                message: Some(format!("Value '{}' does not match pattern '{}'", value, pattern)),
+                                severity: ViolationLevel::Violation,
+                            });
+                        }
+                    }
+                }
+            }
             _ => {} // Other constraints not implemented yet
         }
 

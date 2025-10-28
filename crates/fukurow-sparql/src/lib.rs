@@ -270,6 +270,60 @@ mod tests {
     }
 
     #[test]
+    fn test_sparql_parser_simple_select() {
+        let parser = parser::DefaultSparqlParser;
+        let query = r#"
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX ex: <http://example.org/>
+            SELECT ?person ?name
+            WHERE {
+                ?person rdf:type ex:Person .
+                ?person ex:name ?name .
+            }
+        "#;
+
+        let result = parser.parse_query(query);
+        if let Err(e) = &result {
+            println!("Parse error: {:?}", e);
+        }
+        assert!(result.is_ok());
+
+        let parsed = result.unwrap();
+        assert_eq!(parsed.variables.len(), 2);
+        assert_eq!(parsed.variables[0].0, "person");
+        assert_eq!(parsed.variables[1].0, "name");
+        assert_eq!(parsed.prefixes.len(), 2);
+
+        // Check WHERE clause
+        match &parsed.where_clause {
+            parser::GraphPattern::Bgp(triples) => {
+                assert_eq!(triples.len(), 2);
+            }
+            _ => panic!("Expected BGP"),
+        }
+
+        // Test algebra conversion
+        use crate::algebra::PlanBuilder;
+        let builder = algebra::DefaultPlanBuilder;
+        let algebra_result = builder.to_algebra(&parsed);
+        assert!(algebra_result.is_ok());
+
+        let algebra = algebra_result.unwrap();
+        match algebra {
+            algebra::Algebra::Project(inner, vars) => {
+                assert_eq!(vars.len(), 2);
+                match *inner {
+                    algebra::Algebra::Bgp(triples) => {
+                        assert_eq!(triples.len(), 2);
+                    }
+                    _ => panic!("Expected BGP inside Project"),
+                }
+            }
+            _ => panic!("Expected Project algebra"),
+        }
+    }
+
+    #[test]
     fn test_term_variants() {
         let iri_term = parser::Term::Iri(parser::Iri("http://example.org/test".to_string()));
         assert!(matches!(iri_term, parser::Term::Iri(_)));

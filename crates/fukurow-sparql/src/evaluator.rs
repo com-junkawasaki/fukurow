@@ -81,6 +81,88 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
                 }
                 Ok(result)
             }
+            Algebra::Union(left, right) => {
+                let left_result = self.evaluate(left, store)?;
+                let right_result = self.evaluate(right, store)?;
+
+                match (left_result, right_result) {
+                    (QueryResult::Select { variables: left_vars, bindings: left_bindings },
+                     QueryResult::Select { variables: right_vars, bindings: right_bindings }) => {
+                        // For UNION, combine variables and bindings
+                        let mut all_vars = left_vars.clone();
+                        for var in &right_vars {
+                            if !all_vars.contains(var) {
+                                all_vars.push(var.clone());
+                            }
+                        }
+
+                        let mut all_bindings = left_bindings;
+                        all_bindings.extend(right_bindings);
+
+                        Ok(QueryResult::Select {
+                            variables: all_vars,
+                            bindings: all_bindings,
+                        })
+                    }
+                    _ => Err(SparqlError::EvaluationError("UNION only supported for SELECT results".to_string())),
+                }
+            }
+            Algebra::LeftJoin { left, right, expr } => {
+                let left_result = self.evaluate(left, store)?;
+                let right_result = self.evaluate(right, store)?;
+
+                match (left_result, right_result) {
+                    (QueryResult::Select { variables: left_vars, bindings: mut left_bindings },
+                     QueryResult::Select { variables: right_vars, bindings: right_bindings }) => {
+                        // For LEFT JOIN (OPTIONAL), extend left bindings with matching right bindings
+                        for left_binding in &mut left_bindings {
+                            let mut extended = false;
+                            for right_binding in &right_bindings {
+                                // Check if bindings are compatible (same values for common variables)
+                                let compatible = left_vars.iter().all(|var| {
+                                    if right_vars.contains(var) {
+                                        left_binding.get(var) == right_binding.get(var)
+                                    } else {
+                                        true
+                                    }
+                                });
+
+                                if compatible {
+                                    // Extend left binding with right binding
+                                    for (var, value) in right_binding {
+                                        left_binding.insert(var.clone(), value.clone());
+                                    }
+                                    extended = true;
+                                    break; // For now, take first match
+                                }
+                            }
+
+                            if !extended {
+                                // No match found, add unbound variables from right
+                                for var in &right_vars {
+                                    if !left_binding.contains_key(var) {
+                                        // Leave unbound (not in binding)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Combine variables
+                        let mut all_vars = left_vars;
+                        for var in right_vars {
+                            if !all_vars.contains(&var) {
+                                all_vars.push(var);
+                            }
+                        }
+
+                        Ok(QueryResult::Select {
+                            variables: all_vars,
+                            bindings: left_bindings,
+                        })
+                    }
+                    _ => Err(SparqlError::EvaluationError("LEFT JOIN only supported for SELECT results".to_string())),
+                }
+            }
             Algebra::Distinct(inner) => {
                 let mut result = self.evaluate(inner, store)?;
                 if let QueryResult::Select { bindings, .. } = &mut result {
@@ -99,75 +181,6 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
             Algebra::Reduced(inner) => {
                 // REDUCED は DISTINCT と同様に扱う（実装簡略化）
                 self.evaluate(&Algebra::Distinct(inner.clone()), store)
-            }
-            Algebra::LeftJoin { left, right, expr } => {
-                let left_result = self.evaluate(left, store)?;
-                let right_result = self.evaluate(right, store)?;
-
-        if let (QueryResult::Select { variables: left_vars, bindings: left_bindings },
-                QueryResult::Select { variables: right_vars, bindings: right_bindings }) = (left_result, right_result) {
-
-            let mut joined = Vec::new();
-
-            for left_binding in &left_bindings {
-                let mut found_match = false;
-
-                for right_binding in &right_bindings {
-                    if self.bindings_compatible(left_binding, right_binding) {
-                        if let Some(expr) = expr {
-                            if self.evaluate_expression(expr, &self.merge_bindings(left_binding, right_binding)) {
-                                joined.push(self.merge_bindings(left_binding, right_binding));
-                                found_match = true;
-                            }
-                        } else {
-                            joined.push(self.merge_bindings(left_binding, right_binding));
-                            found_match = true;
-                        }
-                    }
-                }
-
-                // OPTIONAL: マッチしなくても左側の結果を保持
-                if !found_match {
-                    joined.push(left_binding.clone());
-                }
-            }
-
-            // TODO: 変数統合
-            let mut all_vars = left_vars.clone();
-            all_vars.extend(right_vars);
-            all_vars.sort();
-            all_vars.dedup();
-
-            Ok(QueryResult::Select {
-                variables: all_vars,
-                bindings: joined,
-            })
-                } else {
-                    Err(SparqlError::EvaluationError("LeftJoin requires Select results".to_string()))
-                }
-            }
-            Algebra::Union(left, right) => {
-                let left_result = self.evaluate(left, store)?;
-                let right_result = self.evaluate(right, store)?;
-
-        if let (QueryResult::Select { variables: left_vars, bindings: mut left_bindings },
-                QueryResult::Select { variables: right_vars, bindings: right_bindings }) = (left_result, right_result) {
-
-            left_bindings.extend(right_bindings);
-
-            // TODO: 変数統合
-            let mut all_vars = left_vars.clone();
-            all_vars.extend(right_vars);
-            all_vars.sort();
-            all_vars.dedup();
-
-            Ok(QueryResult::Select {
-                variables: all_vars,
-                bindings: left_bindings,
-            })
-                } else {
-                    Err(SparqlError::EvaluationError("Union requires Select results".to_string()))
-                }
             }
             // TODO: 他の代数演算子の実装
             _ => Err(SparqlError::UnsupportedFeature("Algebra operator not implemented".to_string())),
@@ -229,6 +242,7 @@ impl DefaultSparqlEvaluator {
                 &pattern_lit.value == term
             }
             Term::BlankNode(_) => true, // TODO: ブランクノード比較
+            Term::PrefixedName(_, _) => false, // TODO: prefix解決
         }
     }
 

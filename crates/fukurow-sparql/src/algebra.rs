@@ -1,6 +1,7 @@
 //! SPARQL 論理代数
 
 use crate::parser::{SparqlQuery, GraphPattern, TriplePattern, Expression, VarOrIri, OrderCondition, Bindings, Variable, QueryType};
+use crate::SparqlError;
 
 /// 論理代数演算子
 #[derive(Debug, Clone, PartialEq)]

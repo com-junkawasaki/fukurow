@@ -231,6 +231,7 @@ pub enum Term {
     Literal(Literal),
     Variable(Variable),
     BlankNode(String),
+    PrefixedName(String, String), // (prefix, local_name)
 }
 
 /// Triple Pattern
@@ -367,56 +368,215 @@ use crate::SparqlError;
 
 /// SPARQL Parser trait
 pub trait SparqlParser {
-    fn parse(&self, query: &str) -> Result<SparqlQuery, SparqlError>;
+    fn parse(&self, query: &str) -> Result<SparqlQuery, crate::SparqlError>;
+    fn parse_query(&self, query: &str) -> Result<SparqlQuery, crate::SparqlError>;
 }
 
-/// Default implementation
+/// Default SPARQL Parser with winnow
 pub struct DefaultSparqlParser;
 
+impl DefaultSparqlParser {
+    /// Parse IRI (e.g., <http://example.org>)
+    fn parse_iri(input: &mut &str) -> winnow::ModalResult<Iri> {
+        winnow::combinator::delimited(
+            '<',
+            winnow::token::take_while(1.., |c: char| c != '>'),
+            '>'
+        ).parse_next(input)
+        .map(|s: &str| Iri(s.to_string()))
+    }
+
+    /// Parse variable (e.g., ?x)
+    fn parse_variable(input: &mut &str) -> winnow::ModalResult<Variable> {
+        winnow::combinator::preceded(
+            '?',
+            winnow::token::take_while(1.., |c: char| c.is_alphanumeric() || c == '_')
+        ).parse_next(input)
+        .map(|s: &str| Variable(s.to_string()))
+    }
+
+    /// Parse prefixed name (e.g., rdf:type)
+    fn parse_prefixed_name(input: &mut &str) -> winnow::ModalResult<Term> {
+        let prefix = winnow::token::take_while(1.., |c: char| c.is_alphanumeric() || c == '_');
+        let local = winnow::combinator::preceded(
+            ':',
+            winnow::token::take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '-')
+        );
+
+        (prefix, local).parse_next(input)
+        .map(|(p, l): (&str, &str)| Term::PrefixedName(p.to_string(), l.to_string()))
+    }
+
+    /// Parse term (IRI, variable, literal, prefixed name)
+    fn parse_term(input: &mut &str) -> winnow::ModalResult<Term> {
+        winnow::combinator::alt((
+            Self::parse_variable.map(Term::Variable),
+            Self::parse_iri.map(Term::Iri),
+            Self::parse_prefixed_name,
+        )).parse_next(input)
+    }
+
+    /// Parse triple pattern
+    fn parse_triple_pattern(input: &mut &str) -> winnow::ModalResult<TriplePattern> {
+        let subject = Self::parse_term;
+        let predicate = Self::parse_term;
+        let object = Self::parse_term;
+
+        (subject, predicate, object).parse_next(input)
+        .map(|(s, p, o)| TriplePattern { subject: s, predicate: p, object: o })
+    }
+
+    /// Parse SELECT clause
+    fn parse_select_clause(input: &mut &str) -> winnow::ModalResult<(bool, Vec<Variable>)> {
+        let distinct = winnow::combinator::opt("DISTINCT").map(|d| d.is_some());
+        let star_or_vars = winnow::combinator::alt((
+            "*".map(|_| vec![]), // SELECT * - variables will be determined later
+            winnow::combinator::repeat(1.., Self::parse_variable)
+        ));
+
+        winnow::combinator::preceded("SELECT", (distinct, star_or_vars)).parse_next(input)
+    }
+
+    /// Parse WHERE clause
+    fn parse_where_clause(input: &mut &str) -> winnow::ModalResult<GraphPattern> {
+        winnow::combinator::preceded(
+            "WHERE",
+            winnow::combinator::delimited(
+                '{',
+                Self::parse_group_graph_pattern,
+                '}'
+            )
+        ).parse_next(input)
+    }
+
+    /// Parse group graph pattern (simplified - just BGP for now)
+    fn parse_group_graph_pattern(input: &mut &str) -> winnow::ModalResult<GraphPattern> {
+        let mut triples = winnow::combinator::repeat(
+            0..,
+            winnow::combinator::terminated(
+                Self::parse_triple_pattern,
+                winnow::combinator::opt('.')
+            )
+        );
+
+        triples.parse_next(input).map(|ts| GraphPattern::Bgp(ts))
+    }
+
+    /// Parse PREFIX declaration
+    fn parse_prefix_declaration(input: &mut &str) -> winnow::ModalResult<(String, Iri)> {
+        let prefix = winnow::token::take_while(1.., |c: char| c.is_alphanumeric() || c == '_');
+        let iri = winnow::combinator::delimited(
+            '<',
+            winnow::token::take_while(1.., |c: char| c != '>'),
+            '>'
+        );
+
+        winnow::combinator::preceded(
+            "PREFIX",
+            (prefix, ':', iri)
+        ).parse_next(input)
+        .map(|(p, _, i): (&str, char, &str)| (p.to_string(), Iri(i.to_string())))
+    }
+}
+
 impl SparqlParser for DefaultSparqlParser {
-    fn parse(&self, query: &str) -> Result<SparqlQuery, SparqlError> {
-        // 簡易パーサー実装 - 基本的なSELECTクエリのみ
+    fn parse(&self, query: &str) -> Result<SparqlQuery, crate::SparqlError> {
+        // Simple line-based parsing for now
         let mut prefixes = HashMap::new();
         let mut variables = Vec::new();
-        let mut query_type = QueryType::Select;
+        let mut in_where = false;
+        let mut triples = Vec::new();
 
-        // 基本的なPREFIXとSELECTのパース
-        let lines: Vec<&str> = query.lines().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
+        for line in query.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
 
-        for line in &lines {
             if line.starts_with("PREFIX") {
-                // PREFIX解析 (簡易)
+                // Parse PREFIX declaration
                 if let Some(prefix_def) = line.strip_prefix("PREFIX") {
                     let parts: Vec<&str> = prefix_def.trim().split_whitespace().collect();
                     if parts.len() >= 2 {
                         let prefix = parts[0].trim_end_matches(':');
-                        let iri = parts[1].trim_matches('<').trim_matches('>');
-                        prefixes.insert(prefix.to_string(), Iri(iri.to_string()));
+                        let iri_str = parts[1].trim_matches('<').trim_matches('>');
+                        prefixes.insert(prefix.to_string(), Iri(iri_str.to_string()));
                     }
                 }
             } else if line.starts_with("SELECT") {
-                // SELECT変数解析 (簡易)
+                // Parse SELECT variables
                 if let Some(var_part) = line.strip_prefix("SELECT") {
-                    for part in var_part.trim().split_whitespace() {
+                    let var_part = var_part.trim();
+                    if var_part.starts_with("DISTINCT") {
+                        // TODO: Handle DISTINCT
+                        continue;
+                    }
+                    if var_part == "*" {
+                        // SELECT * - no specific variables
+                        continue;
+                    }
+                    for part in var_part.split_whitespace() {
                         if part.starts_with('?') {
                             variables.push(Variable(part[1..].to_string()));
                         }
                     }
                 }
-            } else if line.starts_with("CONSTRUCT") {
-                query_type = QueryType::Construct(vec![]); // TODO: テンプレート解析
-            } else if line.starts_with("ASK") {
-                query_type = QueryType::Ask;
-            } else if line.starts_with("DESCRIBE") {
-                query_type = QueryType::Describe(vec![]); // TODO: 変数/IRI解析
+            } else if line.starts_with("WHERE") {
+                in_where = true;
+            } else if in_where && line.contains('.') {
+                // Parse triple pattern (very simple)
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 3 {
+                    let subject = if parts[0].starts_with('?') {
+                        Term::Variable(Variable(parts[0][1..].to_string()))
+                    } else if parts[0].starts_with('<') {
+                        Term::Iri(Iri(parts[0].trim_matches('<').trim_matches('>').to_string()))
+                    } else {
+                        continue; // Skip complex patterns for now
+                    };
+
+                    let predicate = if parts[1].starts_with('<') {
+                        Term::Iri(Iri(parts[1].trim_matches('<').trim_matches('>').to_string()))
+                    } else if parts[1].contains(':') {
+                        let colon_parts: Vec<&str> = parts[1].split(':').collect();
+                        if colon_parts.len() == 2 {
+                            Term::PrefixedName(colon_parts[0].to_string(), colon_parts[1].to_string())
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    };
+
+                    let object = if parts[2].starts_with('?') {
+                        Term::Variable(Variable(parts[2][1..].to_string()))
+                    } else if parts[2].starts_with('<') {
+                        Term::Iri(Iri(parts[2].trim_matches('<').trim_matches('>').to_string()))
+                    } else if parts[2].contains(':') {
+                        let colon_parts: Vec<&str> = parts[2].split(':').collect();
+                        if colon_parts.len() == 2 {
+                            Term::PrefixedName(colon_parts[0].to_string(), colon_parts[1].to_string())
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    };
+
+                    triples.push(TriplePattern {
+                        subject,
+                        predicate,
+                        object,
+                    });
+                }
             }
         }
 
         Ok(SparqlQuery {
-            query_type,
+            query_type: QueryType::Select,
             variables,
             dataset: vec![],
-            where_clause: GraphPattern::Bgp(vec![]), // TODO: WHERE句解析
+            where_clause: GraphPattern::Bgp(triples),
             solution_modifier: SolutionModifier {
                 group: None,
                 having: None,
@@ -430,5 +590,10 @@ impl SparqlParser for DefaultSparqlParser {
             base_iri: None,
             prefixes,
         })
+    }
+
+
+    fn parse_query(&self, query: &str) -> Result<SparqlQuery, crate::SparqlError> {
+        self.parse(query)
     }
 }
