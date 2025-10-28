@@ -79,7 +79,14 @@ impl OntologyLoader for DefaultOntologyLoader {
                             ontology.add_axiom(Axiom::SymmetricProperty(prop));
                         }
                     }
-                    _ => {} // Other types are handled below
+                    _ => {
+                        // Check if object is a class IRI (not a built-in OWL class) - Class assertion
+                        if !triple.object.starts_with("http://www.w3.org/2002/07/owl#") {
+                            let class = Class::Named(OwlIri::new(triple.object.clone()));
+                            let individual = Individual(OwlIri::new(triple.subject.clone()));
+                            ontology.add_axiom(Axiom::ClassAssertion(class, individual));
+                        }
+                    }
                 }
             }
 
@@ -126,15 +133,6 @@ impl OntologyLoader for DefaultOntologyLoader {
                 }
             }
 
-            // Class assertions (rdf:type with class IRI)
-            else if triple.predicate == rdf_type {
-                // Check if object is a class IRI (not a built-in OWL class)
-                if !triple.object.starts_with("http://www.w3.org/2002/07/owl#") {
-                    let class = Class::Named(OwlIri::new(triple.object.clone()));
-                    let individual = Individual(OwlIri::new(triple.subject.clone()));
-                    ontology.add_axiom(Axiom::ClassAssertion(class, individual));
-                }
-            }
 
             // Property assertions (object properties)
             else {

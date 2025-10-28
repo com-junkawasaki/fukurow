@@ -19,6 +19,149 @@ mod tests {
     use serde_json;
 
     #[cfg(test)]
+    mod interned_string_tests {
+        use super::*;
+
+        #[test]
+        fn test_interned_string_new() {
+            let s1 = InternedString::new("test");
+            let s2 = InternedString::new("test");
+            assert_eq!(s1.as_str(), "test");
+            assert_eq!(s2.as_str(), "test");
+            // Same strings should be equal
+            assert_eq!(s1, s2);
+        }
+
+        #[test]
+        fn test_interned_string_len() {
+            let s = InternedString::new("hello");
+            assert_eq!(s.len(), 5);
+        }
+
+        #[test]
+        fn test_interned_string_is_empty() {
+            let s1 = InternedString::new("");
+            let s2 = InternedString::new("not empty");
+            assert!(s1.is_empty());
+            assert!(!s2.is_empty());
+        }
+
+        #[test]
+        fn test_interned_string_from_string() {
+            let s: InternedString = "test".to_string().into();
+            assert_eq!(s.as_str(), "test");
+        }
+
+        #[test]
+        fn test_interned_string_from_str() {
+            let s: InternedString = "test".into();
+            assert_eq!(s.as_str(), "test");
+        }
+
+        #[test]
+        fn test_interned_string_from_string_ref() {
+            let string = "test".to_string();
+            let s: InternedString = (&string).into();
+            assert_eq!(s.as_str(), "test");
+        }
+
+        #[test]
+        fn test_interned_string_display() {
+            let s = InternedString::new("test");
+            assert_eq!(format!("{}", s), "test");
+        }
+
+        #[test]
+        fn test_interned_string_as_ref() {
+            let s = InternedString::new("test");
+            let str_ref: &str = s.as_ref();
+            assert_eq!(str_ref, "test");
+        }
+    }
+
+    #[cfg(test)]
+    mod triple_tests {
+        use super::*;
+
+        #[test]
+        fn test_triple_creation() {
+            let triple = Triple {
+                subject: "subject".to_string(),
+                predicate: "predicate".to_string(),
+                object: "object".to_string(),
+            };
+            assert_eq!(triple.subject, "subject");
+            assert_eq!(triple.predicate, "predicate");
+            assert_eq!(triple.object, "object");
+        }
+
+        #[test]
+        fn test_triple_equality() {
+            let triple1 = Triple {
+                subject: "s".to_string(),
+                predicate: "p".to_string(),
+                object: "o".to_string(),
+            };
+            let triple2 = Triple {
+                subject: "s".to_string(),
+                predicate: "p".to_string(),
+                object: "o".to_string(),
+            };
+            let triple3 = Triple {
+                subject: "s".to_string(),
+                predicate: "p".to_string(),
+                object: "different".to_string(),
+            };
+            assert_eq!(triple1, triple2);
+            assert_ne!(triple1, triple3);
+        }
+    }
+
+    #[cfg(test)]
+    mod interned_triple_tests {
+        use super::*;
+
+        #[test]
+        fn test_interned_triple_new() {
+            let triple = InternedTriple::new("subject", "predicate", "object");
+            assert_eq!(triple.subject.as_str(), "subject");
+            assert_eq!(triple.predicate.as_str(), "predicate");
+            assert_eq!(triple.object.as_str(), "object");
+        }
+
+        #[test]
+        fn test_interned_triple_to_triple() {
+            let interned = InternedTriple::new("s", "p", "o");
+            let triple = interned.to_triple();
+            assert_eq!(triple.subject, "s");
+            assert_eq!(triple.predicate, "p");
+            assert_eq!(triple.object, "o");
+        }
+
+        #[test]
+        fn test_interned_triple_from_triple() {
+            let triple = Triple {
+                subject: "subject".to_string(),
+                predicate: "predicate".to_string(),
+                object: "object".to_string(),
+            };
+            let interned = InternedTriple::from_triple(&triple);
+            assert_eq!(interned.subject.as_str(), "subject");
+            assert_eq!(interned.predicate.as_str(), "predicate");
+            assert_eq!(interned.object.as_str(), "object");
+        }
+
+        #[test]
+        fn test_interned_triple_equality() {
+            let triple1 = InternedTriple::new("s", "p", "o");
+            let triple2 = InternedTriple::new("s", "p", "o");
+            let triple3 = InternedTriple::new("s", "p", "different");
+            assert_eq!(triple1, triple2);
+            assert_ne!(triple1, triple3);
+        }
+    }
+
+    #[cfg(test)]
     mod jsonld_tests {
         use super::*;
 

@@ -9,18 +9,9 @@ use std::collections::HashMap;
 
 pub mod store;
 pub mod provenance;
-pub mod persistence;
-pub mod adapter;
-pub mod timeseriesdb;
 
 pub use store::*;
 pub use provenance::*;
-pub use persistence::*;
-pub use timeseriesdb::*;
-
-// Re-export for tests
-#[cfg(test)]
-pub use adapter::sqlite::SqliteAdapter;
 
 #[cfg(test)]
 mod tests {
@@ -82,22 +73,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_persistence_backend_memory() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let backend = PersistenceBackend::Memory;
-        let pm = PersistenceManager::new(backend);
-
-        let store = RdfStore::new();
-        assert_eq!(store.statistics().total_triples, 0);
-
-        // Save should be no-op for memory
-        rt.block_on(pm.save_store(&store)).unwrap();
-
-        // Load should return empty store for memory
-        let loaded = rt.block_on(pm.load_store()).unwrap();
-        assert_eq!(loaded.statistics().total_triples, 0);
-    }
 
     #[test]
     fn test_audit_operation_display() {
@@ -247,8 +222,7 @@ mod tests {
 
     #[test]
     fn test_provenance_imported() {
-        use chrono::Utc;
-        let imported_at = Utc::now();
+        let imported_at = 1640995200000; // 2022-01-01 00:00:00 UTC in milliseconds
         let provenance = Provenance::Imported {
             source_uri: "http://example.com/data.ttl".to_string(),
             imported_at,

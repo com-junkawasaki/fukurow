@@ -1,22 +1,9 @@
 [workspace]
 members = [
-    "crates/fukurow",
     "crates/fukurow-core",
     "crates/fukurow-store",
-    "crates/fukurow-rules",
-    "crates/fukurow-sparql",
-    "crates/fukurow-shacl",
-    "crates/fukurow-rdfs",
     "crates/fukurow-lite",
-    "crates/fukurow-dl",
-    "crates/fukurow-siem",
-    "crates/fukurow-engine",
-    "crates/fukurow-domain-cyber",
-    "crates/fukurow-observability",
-    "crates/fukurow-api",
-    "crates/fukurow-cli",
-    "crates/fukurow-operator",
-    "crates/fukurow-streaming"
+    "crates/fukurow-dl"
 ]
 resolver = "2"
 
@@ -47,6 +34,12 @@ anyhow = "1.0"
 thiserror = "1.0"
 getrandom = { version = "0.3", features = ["js", "wasm_js"], default-features = false }
 base64 = "0.22"
+
+# Internal crate dependencies
+fukurow-core = { path = "crates/fukurow-core", version = "0.1.0" }
+fukurow-store = { path = "crates/fukurow-store", version = "0.1.0" }
+fukurow-lite = { path = "crates/fukurow-lite", version = "0.1.0" }
+fukurow-dl = { path = "crates/fukurow-dl", version = "0.1.0" }
 
 # JSON-LD and RDF processing
 json-ld = "0.16"
