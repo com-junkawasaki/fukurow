@@ -10,16 +10,16 @@ use tokio::sync::RwLock;
 use std::time::Instant;
 
 use crate::models::*;
-use fukurow_observability::HealthMonitor;
+use fukurow_observability::{HealthMonitor, HealthStatus, HealthCheck, SystemMetrics};
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
 /// Shared application state
 #[derive(Clone)]
-pub struct AppState<M: HealthMonitor> {
+pub struct AppState {
     pub reasoner: Arc<ReasonerEngine>,
     pub threat_processor: Arc<RwLock<ThreatProcessor>>,
-    pub monitoring: Arc<M>,
+    pub monitoring: Arc<dyn HealthMonitor>,
     pub start_time: Instant,
 }
 
@@ -188,4 +188,22 @@ pub async fn import_threat_indicators(
             Err((StatusCode::INTERNAL_SERVER_ERROR, JsonResponse(error_response)))
         }
     }
+}
+
+/// Monitoring: overall health
+pub async fn monitoring_health(State(state): State<AppState>) -> JsonResponse<HealthStatus> {
+    let status = state.monitoring.get_overall_health().await;
+    JsonResponse(status)
+}
+
+/// Monitoring: detailed checks
+pub async fn monitoring_health_detailed(State(state): State<AppState>) -> JsonResponse<Vec<HealthCheck>> {
+    let checks = state.monitoring.run_health_checks().await;
+    JsonResponse(checks)
+}
+
+/// Monitoring: system metrics
+pub async fn monitoring_metrics(State(state): State<AppState>) -> JsonResponse<SystemMetrics> {
+    let metrics = state.monitoring.get_metrics().await;
+    JsonResponse(metrics)
 }

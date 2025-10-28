@@ -50,7 +50,7 @@ pub mod routes {
     };
     use std::sync::Arc;
 
-    pub fn monitoring_routes<M: HealthMonitor>(monitor: Arc<M>) -> Router {
+    pub fn monitoring_routes(monitor: Arc<dyn HealthMonitor>) -> Router {
         Router::new()
             .route("/health", get(health))
             .route("/health/detailed", get(health_detailed))
@@ -58,7 +58,7 @@ pub mod routes {
             .with_state(monitor)
     }
 
-    async fn health<M: HealthMonitor>(State(m): State<Arc<M>>) -> impl IntoResponse {
+    async fn health(State(m): State<Arc<dyn HealthMonitor>>) -> impl IntoResponse {
         let status = m.get_overall_health().await;
         let status_code = match status {
             HealthStatus::Up => StatusCode::OK,
@@ -68,12 +68,12 @@ pub mod routes {
         (status_code, Json(status))
     }
 
-    async fn health_detailed<M: HealthMonitor>(State(m): State<Arc<M>>) -> impl IntoResponse {
+    async fn health_detailed(State(m): State<Arc<dyn HealthMonitor>>) -> impl IntoResponse {
         let checks = m.run_health_checks().await;
         Json(checks)
     }
 
-    async fn metrics<M: HealthMonitor>(State(m): State<Arc<M>>) -> impl IntoResponse {
+    async fn metrics(State(m): State<Arc<dyn HealthMonitor>>) -> impl IntoResponse {
         let s = m.get_metrics().await;
         Json(s)
     }

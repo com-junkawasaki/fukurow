@@ -6,13 +6,9 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 use crate::handlers::*;
-use fukurow_observability::routes::monitoring_routes;
-use fukurow_observability::HealthMonitor;
 
 /// Create the main API router
-pub fn create_router<M: HealthMonitor>(state: AppState<M>) -> Router {
-    let monitoring_router = monitoring_routes(state.monitoring.clone());
-
+pub fn create_router(state: AppState) -> Router<AppState> {
     Router::new()
         // Health and status routes
         .route("/health", get(health_check))
@@ -36,15 +32,18 @@ pub fn create_router<M: HealthMonitor>(state: AppState<M>) -> Router {
         .route("/threat-intel/export", get(export_threat_indicators))
         .route("/threat-intel/import", post(import_threat_indicators))
 
+        // Monitoring routes (bound to AppState)
+        .route("/monitoring/health", get(monitoring_health))
+        .route("/monitoring/health/detailed", get(monitoring_health_detailed))
+        .route("/monitoring/metrics", get(monitoring_metrics))
+
         // Apply middleware
         .layer(CorsLayer::permissive())
         .with_state(state)
-        // Add monitoring routes as nested router
-        .nest("/monitoring", monitoring_router)
 }
 
 /// API documentation routes (OpenAPI/Swagger)
-pub fn create_docs_router() -> Router {
+pub fn create_docs_router() -> Router<AppState> {
     Router::new()
         // TODO: Add OpenAPI/Swagger documentation routes
         // .route("/docs", get(serve_swagger_ui))

@@ -30,19 +30,19 @@ impl Default for ServerConfig {
 }
 
 /// Reasoner API server
-pub struct ReasonerServer<M: HealthMonitor> {
+pub struct ReasonerServer {
     config: ServerConfig,
-    app_state: AppState<M>,
+    app_state: AppState,
 }
 
-impl<M: HealthMonitor> ReasonerServer<M> {
+impl ReasonerServer {
     /// Create new server with default configuration
-    pub fn new(monitoring: std::sync::Arc<M>) -> Self {
+    pub fn new(monitoring: std::sync::Arc<dyn HealthMonitor>) -> Self {
         Self::with_config(ServerConfig::default(), monitoring)
     }
 
     /// Create new server with custom configuration
-    pub fn with_config(config: ServerConfig, monitoring: std::sync::Arc<M>) -> Self {
+    pub fn with_config(config: ServerConfig, monitoring: std::sync::Arc<dyn HealthMonitor>) -> Self {
         let reasoner = ReasonerEngine::new();
         let threat_processor = ThreatProcessor::new();
 
@@ -67,7 +67,7 @@ impl<M: HealthMonitor> ReasonerServer<M> {
     }
 
     /// Create the application router
-    pub fn create_app(&self) -> Router {
+    pub fn create_app(&self) -> Router<AppState> {
         create_router(self.app_state.clone())
     }
 
@@ -81,7 +81,7 @@ impl<M: HealthMonitor> ReasonerServer<M> {
         let listener = TcpListener::bind(addr).await?;
         info!("Server listening on {}", addr);
 
-        serve(listener, app)
+        serve(listener, app.into_make_service())
             .await
             .map_err(|e| {
                 error!("Server error: {}", e);
@@ -99,7 +99,7 @@ impl<M: HealthMonitor> ReasonerServer<M> {
         let listener = TcpListener::bind(addr).await?;
         info!("Server listening on {}", addr);
 
-        let server = serve(listener, app);
+        let server = serve(listener, app.into_make_service());
         let graceful = server.with_graceful_shutdown(shutdown_signal);
 
         // Note: Axum's WithGracefulShutdown doesn't implement Future directly
@@ -111,14 +111,10 @@ impl<M: HealthMonitor> ReasonerServer<M> {
     }
 }
 
-impl Default for ReasonerServer {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// Default cannot be implemented without a default monitor
 
 /// Create a server with custom reasoner engine
-pub fn create_server_with_reasoner<M: HealthMonitor>(reasoner: ReasonerEngine, config: ServerConfig, monitoring: std::sync::Arc<M>) -> ReasonerServer<M> {
+pub fn create_server_with_reasoner(reasoner: ReasonerEngine, config: ServerConfig, monitoring: std::sync::Arc<dyn HealthMonitor>) -> ReasonerServer {
     let threat_processor = ThreatProcessor::new();
 
     let app_state = AppState {

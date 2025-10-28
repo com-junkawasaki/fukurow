@@ -7,13 +7,10 @@ pub mod routes;
 pub mod handlers;
 pub mod models;
 pub mod server;
-// monitoring moved to fukurow-observability
-
 pub use routes::*;
 pub use handlers::*;
 pub use models::*;
 pub use server::*;
-pub use monitoring::*;
 
 #[cfg(test)]
 mod tests {
