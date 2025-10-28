@@ -9,7 +9,7 @@ keywords = ["siem", "splunk", "elk", "chronicle", "security", "integration"]
 categories = ["api-bindings", "asynchronous"]
 
 [dependencies]
-fukurow-core.workspace = true
+fukurow-core = "0.1.0"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
