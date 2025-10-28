@@ -33,5 +33,6 @@ js-sys = "0.3"
 console_error_panic_hook = "0.1.6"
 
 # Core RDF processing (minimal for WASM compatibility)
-# Note: Integration crates are not included due to tokio/async dependencies
-# TODO: Implement minimal reasoning engines directly in WASM
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
+fukurow-lite = { path = "../fukurow-lite", default-features = false }

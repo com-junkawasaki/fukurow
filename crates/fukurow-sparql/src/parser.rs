@@ -486,7 +486,9 @@ impl SparqlParser for DefaultSparqlParser {
         let mut variables = Vec::new();
         let mut query_type = QueryType::Select;
         let mut in_where = false;
+        let mut in_construct = false;
         let mut triples = Vec::new();
+        let mut construct_triples = Vec::new();
 
         for line in query.lines() {
             let line = line.trim();
@@ -525,7 +527,73 @@ impl SparqlParser for DefaultSparqlParser {
             } else if line.starts_with("ASK") {
                 // ASK query - no variables needed, just WHERE clause
                 query_type = QueryType::Ask;
-                in_where = true; // ASK is followed by WHERE clause directly
+                in_where = true;
+            } else if line.starts_with("CONSTRUCT") {
+                // CONSTRUCT query - parse construct template
+                query_type = QueryType::Construct(vec![]);
+                in_construct = true;
+            } else if line.starts_with("WHERE") {
+                in_where = true;
+                in_construct = false; // Switch from construct to where
+            } else if in_construct && line.trim().ends_with('.') {
+                // Parse construct triple template
+                let line = line.trim();
+                let line = &line[..line.len()-1]; // Remove the trailing dot
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 3 {
+                    let subject = if parts[0].starts_with('?') {
+                        Term::Variable(Variable(parts[0][1..].to_string()))
+                    } else if parts[0].starts_with('<') {
+                        Term::Iri(Iri(parts[0].trim_matches('<').trim_matches('>').to_string()))
+                    } else {
+                        continue; // Skip complex patterns for now
+                    };
+
+                    let predicate = if parts[1] == "a" {
+                        // "a" is shorthand for rdf:type
+                        Term::PrefixedName("rdf".to_string(), "type".to_string())
+                    } else if parts[1].starts_with('<') {
+                        Term::Iri(Iri(parts[1].trim_matches('<').trim_matches('>').to_string()))
+                    } else if parts[1].contains(':') {
+                        let colon_parts: Vec<&str> = parts[1].split(':').collect();
+                        if colon_parts.len() == 2 {
+                            Term::PrefixedName(colon_parts[0].to_string(), colon_parts[1].to_string())
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    };
+
+                    let object = if parts[2].starts_with('?') {
+                        Term::Variable(Variable(parts[2][1..].to_string()))
+                    } else if parts[2].starts_with('<') {
+                        Term::Iri(Iri(parts[2].trim_matches('<').trim_matches('>').to_string()))
+                    } else if parts[2].starts_with('"') && parts[2].ends_with('"') {
+                        let value = parts[2].trim_matches('"').to_string();
+                        Term::Literal(Literal {
+                            value,
+                            datatype: None,
+                            language: None,
+                        })
+                    } else if parts[2].contains(':') {
+                        let colon_parts: Vec<&str> = parts[2].split(':').collect();
+                        if colon_parts.len() == 2 {
+                            Term::PrefixedName(colon_parts[0].to_string(), colon_parts[1].to_string())
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    };
+
+                           println!("DEBUG: Adding construct triple: subject={:?}, predicate={:?}, object={:?}", subject, predicate, object);
+                           construct_triples.push(TriplePattern {
+                               subject,
+                               predicate,
+                               object,
+                           });
+                }
             } else if in_where && line.trim().ends_with('.') {
                 // Parse triple pattern (very simple)
                 let line = line.trim();
@@ -540,7 +608,10 @@ impl SparqlParser for DefaultSparqlParser {
                         continue; // Skip complex patterns for now
                     };
 
-                    let predicate = if parts[1].starts_with('<') {
+                    let predicate = if parts[1] == "a" {
+                        // "a" is shorthand for rdf:type
+                        Term::PrefixedName("rdf".to_string(), "type".to_string())
+                    } else if parts[1].starts_with('<') {
                         Term::Iri(Iri(parts[1].trim_matches('<').trim_matches('>').to_string()))
                     } else if parts[1].contains(':') {
                         let colon_parts: Vec<&str> = parts[1].split(':').collect();
@@ -588,9 +659,16 @@ impl SparqlParser for DefaultSparqlParser {
         println!("DEBUG: Parsed query type: {:?}", query_type);
         println!("DEBUG: Parsed variables: {:?}", variables);
         println!("DEBUG: Parsed triples: {:?}", triples);
+        println!("DEBUG: Parsed construct triples: {:?}", construct_triples);
+
+        // Set construct templates for CONSTRUCT queries
+        let final_query_type = match query_type {
+            QueryType::Construct(_) => QueryType::Construct(construct_triples),
+            _ => query_type,
+        };
 
         Ok(SparqlQuery {
-            query_type,
+            query_type: final_query_type,
             variables,
             dataset: vec![],
             where_clause: GraphPattern::Bgp(triples),

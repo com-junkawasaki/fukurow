@@ -66,10 +66,19 @@ impl Default for DefaultSparqlEvaluator {
 
 impl SparqlEvaluator for DefaultSparqlEvaluator {
     fn evaluate_query(&self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError> {
-        // Create evaluator with prefixes
-        let mut evaluator = if !query.prefixes.is_empty() {
-            println!("DEBUG: Creating evaluator with prefixes: {:?}", query.prefixes);
-            Self::with_prefixes(query.prefixes.clone())
+        // Create evaluator with prefixes (add default prefixes)
+        let mut prefixes = query.prefixes.clone();
+        // Add default RDF prefix if not present
+        if !prefixes.contains_key("rdf") {
+            prefixes.insert("rdf".to_string(), crate::parser::Iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#".to_string()));
+        }
+        if !prefixes.contains_key("rdfs") {
+            prefixes.insert("rdfs".to_string(), crate::parser::Iri("http://www.w3.org/2000/01/rdf-schema#".to_string()));
+        }
+
+        let evaluator = if !prefixes.is_empty() {
+            println!("DEBUG: Creating evaluator with prefixes: {:?}", prefixes);
+            Self::with_prefixes(prefixes)
         } else {
             println!("DEBUG: Creating evaluator without prefixes");
             Self::new()
@@ -89,6 +98,47 @@ impl SparqlEvaluator for DefaultSparqlEvaluator {
                     return Ok(QueryResult::Ask { result: !bindings.is_empty() });
                 }
                 _ => return Err(crate::SparqlError::EvaluationError("ASK query evaluation failed".to_string())),
+            }
+        }
+
+        // CONSTRUCTクエリの特別処理
+        if let crate::parser::QueryType::Construct(templates) = &query.query_type {
+            // CONSTRUCTクエリはWHERE句を評価し、テンプレートを使って新しいトリプルを構築
+            use crate::algebra::PlanBuilder;
+            let builder = crate::algebra::DefaultPlanBuilder;
+            let algebra = builder.to_algebra(query)?;
+            let result = evaluator.evaluate(&algebra, store)?;
+
+            match result {
+                QueryResult::Select { bindings, .. } => {
+                    let mut constructed_triples = Vec::new();
+
+                    // 各バインディングに対してテンプレートをインスタンス化
+                    for binding in bindings {
+                        println!("DEBUG: Processing binding: {:?}", binding);
+                        for template in templates {
+                            println!("DEBUG: Processing template: {:?}", template);
+                            let subject = self.instantiate_term(&template.subject, &binding, &query.prefixes);
+                            let predicate = self.instantiate_term(&template.predicate, &binding, &query.prefixes);
+                            let object = self.instantiate_term(&template.object, &binding, &query.prefixes);
+
+                            println!("DEBUG: Instantiated: s={:?}, p={:?}, o={:?}", subject, predicate, object);
+
+                            if let (Some(s), Some(p), Some(o)) = (subject, predicate, object) {
+                                constructed_triples.push(fukurow_core::model::Triple {
+                                    subject: s,
+                                    predicate: p,
+                                    object: o,
+                                });
+                            } else {
+                                println!("DEBUG: Some terms could not be instantiated");
+                            }
+                        }
+                    }
+
+                    return Ok(QueryResult::Construct { triples: constructed_triples });
+                }
+                _ => return Err(crate::SparqlError::EvaluationError("CONSTRUCT query evaluation failed".to_string())),
             }
         }
 
@@ -269,13 +319,17 @@ impl DefaultSparqlEvaluator {
 
         // 最初のトリプルを評価
         let mut results = self.evaluate_triple_pattern(&triples[0], store)?;
+        println!("DEBUG: evaluate_bgp initial results: {:?}", results);
 
         // 残りのトリプルを結合
         for triple in &triples[1..] {
             let next_results = self.evaluate_triple_pattern(triple, store)?;
+            println!("DEBUG: evaluate_bgp next_results: {:?}", next_results);
             results = self.join_bindings(results, next_results);
+            println!("DEBUG: evaluate_bgp after join: {:?}", results);
         }
 
+        println!("DEBUG: evaluate_bgp final results: {:?}", results);
         Ok(results)
     }
 
@@ -300,9 +354,11 @@ impl DefaultSparqlEvaluator {
                 let mut binding = HashMap::new();
 
                 // 変数を束縛
+                println!("DEBUG: Before binding: {:?}", binding);
                 self.bind_term(&pattern.subject, &triple.subject, &mut binding);
                 self.bind_term(&pattern.predicate, &triple.predicate, &mut binding);
                 self.bind_term(&pattern.object, &triple.object, &mut binding);
+                println!("DEBUG: After binding: {:?}", binding);
 
                 results.push(binding);
             }
@@ -322,21 +378,32 @@ impl DefaultSparqlEvaluator {
             }
             Term::BlankNode(_) => true, // TODO: ブランクノード比較
             Term::PrefixedName(prefix, local) => {
+                println!("DEBUG: Resolving prefixed name: {}:{}", prefix, local);
                 if let Some(resolver) = &self.prefix_resolver {
                     if let Some(resolved) = resolver.resolve(prefix, local) {
+                        println!("DEBUG: Resolved to: {}", resolved);
                         resolved == term
                     } else {
+                        println!("DEBUG: Resolver failed to resolve");
                         false
                     }
                 } else {
                     // フォールバック: 簡易実装
+                    println!("DEBUG: Using fallback resolution");
                     if prefix == "ex" {
                         let resolved = format!("http://example.org/{}", local);
+                        println!("DEBUG: ex:{} -> {}", local, resolved);
                         resolved == term
-                    } else if prefix == "rdf" {
-                        let resolved = format!("http://www.w3.org/1999/02/22-rdf-syntax-ns#{}", local);
+                    } else if prefix == "rdf" && local == "type" {
+                        let result = term == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+                        println!("DEBUG: rdf:type check: {} == {} -> {}", term, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", result);
+                        result
+                    } else if prefix == "foaf" {
+                        let resolved = format!("http://xmlns.com/foaf/0.1/{}", local);
+                        println!("DEBUG: foaf:{} -> {}", local, resolved);
                         resolved == term
                     } else {
+                        println!("DEBUG: Unknown prefix: {}", prefix);
                         false
                     }
                 }
@@ -357,7 +424,29 @@ impl DefaultSparqlEvaluator {
         prefixes.get(prefix).map(|iri| format!("{}{}", iri.0, local))
     }
 
+    fn instantiate_term(&self, term: &Term, binding: &Bindings, prefixes: &std::collections::HashMap<String, crate::parser::Iri>) -> Option<String> {
+        match term {
+            Term::Variable(var) => {
+                // バインディングから値を取得
+                binding.get(var).and_then(|bound_term| {
+                    match bound_term {
+                        Term::Iri(iri) => Some(iri.0.clone()),
+                        Term::Literal(lit) => Some(lit.value.clone()),
+                        _ => None,
+                    }
+                })
+            }
+            Term::Iri(iri) => Some(iri.0.clone()),
+            Term::Literal(lit) => Some(lit.value.clone()),
+            Term::PrefixedName(prefix, local) => {
+                self.resolve_prefixed_name(prefix, local, prefixes)
+            }
+            Term::BlankNode(_) => None, // Blank nodes not supported in CONSTRUCT for now
+        }
+    }
+
     fn join_bindings(&self, left: Vec<Bindings>, right: Vec<Bindings>) -> Vec<Bindings> {
+        println!("DEBUG: join_bindings left: {:?}, right: {:?}", left, right);
         let mut results = Vec::new();
 
         for left_binding in &left {
@@ -365,11 +454,13 @@ impl DefaultSparqlEvaluator {
                 if self.bindings_compatible(left_binding, right_binding) {
                     let mut joined = left_binding.clone();
                     joined.extend(right_binding.clone());
+                    println!("DEBUG: joined: {:?}", joined);
                     results.push(joined);
                 }
             }
         }
 
+        println!("DEBUG: join_bindings result: {:?}", results);
         results
     }
 

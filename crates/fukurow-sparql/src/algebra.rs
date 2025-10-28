@@ -143,16 +143,14 @@ impl PlanBuilder for DefaultPlanBuilder {
             QueryType::Select => {
                 algebra = Algebra::Project(Box::new(algebra), query.variables.clone());
             }
-            QueryType::Construct(templates) => {
-                // TODO: CONSTRUCT処理
-                algebra = Algebra::Project(Box::new(algebra), query.variables.clone());
+            QueryType::Construct(_) => {
+                // CONSTRUCT: no projection, keep all variables
             }
             QueryType::Ask => {
-                algebra = Algebra::Project(Box::new(algebra), vec![]);
+                // ASK: no projection needed
             }
-            QueryType::Describe(describes) => {
+            QueryType::Describe(_) => {
                 // TODO: DESCRIBE処理
-                algebra = Algebra::Project(Box::new(algebra), vec![]);
             }
         }
 

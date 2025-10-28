@@ -389,6 +389,57 @@ mod tests {
     }
 
     #[test]
+    fn test_sparql_construct_query() {
+        let mut store = RdfStore::new();
+
+        // Add test data
+        store.insert(Triple {
+            subject: "http://example.org/alice".to_string(),
+            predicate: "http://example.org/name".to_string(),
+            object: "\"Alice\"".to_string(),
+        }, default_graph_id(), sensor_provenance());
+
+        store.insert(Triple {
+            subject: "http://example.org/alice".to_string(),
+            predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+            object: "http://example.org/Person".to_string(),
+        }, default_graph_id(), sensor_provenance());
+
+        // CONSTRUCT query
+        let query = r#"
+            PREFIX ex: <http://example.org/>
+            PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+            CONSTRUCT {
+                ?person foaf:name ?name .
+                ?person a ex:Person .
+            }
+            WHERE {
+                ?person ex:name ?name .
+                ?person a ex:Person .
+            }
+        "#;
+
+        let result = execute_query(query, &store);
+        assert!(result.is_ok());
+
+        match result.unwrap() {
+            QueryResult::Construct { triples } => {
+                assert_eq!(triples.len(), 2); // 2 triples should be constructed
+
+                // Check that the triples contain expected data
+                let name_triple = triples.iter().find(|t| t.predicate.contains("name")).unwrap();
+                assert_eq!(name_triple.subject, "http://example.org/alice");
+                assert!(name_triple.object.contains("Alice"));
+
+                let type_triple = triples.iter().find(|t| t.predicate.contains("type")).unwrap();
+                assert_eq!(type_triple.subject, "http://example.org/alice");
+                assert_eq!(type_triple.object, "http://example.org/Person");
+            }
+            _ => panic!("Expected Construct result"),
+        }
+    }
+
+    #[test]
     fn test_term_variants() {
         let iri_term = parser::Term::Iri(parser::Iri("http://example.org/test".to_string()));
         assert!(matches!(iri_term, parser::Term::Iri(_)));
