@@ -12,6 +12,9 @@ use fukurow_observability::HealthMonitor;
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
+#[cfg(feature = "streaming")]
+use fukurow_streaming::processor::EventSender;
+
 /// Server configuration
 #[derive(Debug, Clone)]
 pub struct ServerConfig {

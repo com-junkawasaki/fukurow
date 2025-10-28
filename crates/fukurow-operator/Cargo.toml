@@ -11,7 +11,7 @@ categories = ["api-bindings", "cloud"]
 
 [dependencies]
 kube = { version = "0.87", features = ["runtime", "derive"] }
-k8s-openapi = { version = "0.19", features = ["v1_27"] }
+k8s-openapi = { version = "0.21", features = ["v1_28"] }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true

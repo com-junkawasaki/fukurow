@@ -14,6 +14,9 @@ use fukurow_observability::{HealthMonitor, HealthStatus, HealthCheck, SystemMetr
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
+#[cfg(feature = "streaming")]
+use fukurow_streaming::processor::EventSender;
+
 /// Shared application state
 #[derive(Clone)]
 pub struct AppState {
@@ -21,6 +24,8 @@ pub struct AppState {
     pub threat_processor: Arc<RwLock<ThreatProcessor>>,
     pub monitoring: Arc<dyn HealthMonitor>,
     pub start_time: Instant,
+    #[cfg(feature = "streaming")]
+    pub event_sender: Option<EventSender>,
 }
 
 /// Health check handler
@@ -41,8 +46,14 @@ pub async fn submit_event(
     Extension(state): Extension<Arc<AppState>>,
     Json(request): Json<SubmitEventRequest>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
-    match state.reasoner.add_event(request.event).await {
+    match state.reasoner.add_event(request.event.clone()).await {
         Ok(_) => {
+            // Send security event if streaming is enabled
+            #[cfg(feature = "streaming")]
+            if let Some(ref sender) = state.event_sender {
+                let _ = sender.send_security_event(request.event, "api".to_string());
+            }
+
             let response = ApiResponse::success("Event submitted successfully".to_string());
             Ok(JsonResponse(response))
         }
@@ -65,10 +76,20 @@ pub async fn execute_reasoning(
             let execution_time = start.elapsed();
 
             let response = ReasoningResponse {
-                actions,
+                actions: actions.clone(),
                 execution_time_ms: execution_time.as_millis() as u64,
                 event_count: 0, // TODO: Get actual event count from reasoner
             };
+
+            // Send reasoning result event if streaming is enabled
+            #[cfg(feature = "streaming")]
+            if let Some(ref sender) = state.event_sender {
+                let _ = sender.send_reasoning_result(
+                    actions,
+                    execution_time.as_millis() as u64,
+                    0, // TODO: Get actual event count
+                );
+            }
 
             Ok(JsonResponse(ApiResponse::success(response)))
         }

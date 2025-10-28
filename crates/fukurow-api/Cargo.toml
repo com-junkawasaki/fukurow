@@ -15,6 +15,7 @@ fukurow-store = { path = "../fukurow-store" }
 fukurow-engine = { path = "../fukurow-engine" }
 fukurow-domain-cyber = { path = "../fukurow-domain-cyber" }
 fukurow-observability = { path = "../fukurow-observability" }
+fukurow-streaming = { path = "../fukurow-streaming", optional = true }
 axum.workspace = true
 tower = { workspace = true, features = ["make"] }
 tower-http.workspace = true
@@ -30,6 +31,10 @@ tracing-subscriber.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", features = ["json"] }
 async-trait = "0.1"
+
+[features]
+default = []
+streaming = ["fukurow-streaming"]
 
 [dev-dependencies]
 proptest.workspace = true
