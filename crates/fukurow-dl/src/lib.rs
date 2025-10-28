@@ -16,7 +16,7 @@ pub use reasoner::OwlDlReasoner;
 pub use loader::OwlDlOntologyLoader;
 
 // Re-export OWL Lite types for compatibility
-pub use fukurow_lite::{Ontology as OwlLiteOntology, Class, Property, Individual, Axiom as OwlLiteAxiom};
+pub use fukurow_lite::{Ontology as OwlLiteOntology, Class, Property, Individual, Axiom as OwlLiteAxiom, model::OwlIri};
 
 // Error types
 use thiserror::Error;

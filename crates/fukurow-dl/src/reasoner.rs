@@ -5,7 +5,7 @@ use crate::loader::OwlDlOntologyLoader;
 use crate::tableau::DlTableauReasoner;
 use crate::OwlDlError;
 use fukurow_store::store::RdfStore;
-use fukurow_lite::{OwlLiteReasoner, Ontology as OwlLiteOntology};
+use fukurow_lite::{OwlLiteReasoner, Ontology as OwlLiteOntology, model::OwlIri};
 use std::collections::{HashMap, HashSet};
 
 /// OWL DL reasoner
@@ -72,17 +72,256 @@ impl OwlDlReasoner {
 
     /// Check if individual is instance of class expression
     pub fn is_instance_of(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, class_expr: &ClassExpression) -> Result<bool, OwlDlError> {
-        // For now, fall back to OWL Lite reasoning for simple cases
         match class_expr {
             ClassExpression::Named(iri) => {
-                let lite_class = fukurow_lite::Class::Named(iri.clone());
-                self.lite_reasoner.is_instance_of(&OwlLiteOntology::new(), individual, &lite_class)
-                    .map_err(|e| OwlDlError::ReasoningError(e.to_string()))
+                // Check direct class assertions and subclass relationships
+                self.check_named_class_membership(ontology, individual, iri)
             }
             ClassExpression::Thing => Ok(true),
             ClassExpression::Nothing => Ok(false),
-            _ => Err(OwlDlError::UnsupportedFeature("Complex instance checking not yet implemented".to_string()))
+            ClassExpression::IntersectionOf(classes) => {
+                // Individual must be instance of ALL classes
+                for class in classes {
+                    if !self.is_instance_of(ontology, individual, class)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            ClassExpression::UnionOf(classes) => {
+                // Individual must be instance of AT LEAST ONE class
+                for class in classes {
+                    if self.is_instance_of(ontology, individual, class)? {
+                        return Ok(true);
+                    }
+                }
+                Ok(false)
+            }
+            ClassExpression::ComplementOf(class) => {
+                // Individual is NOT an instance of the class
+                let is_instance = self.is_instance_of(ontology, individual, class)?;
+                Ok(!is_instance)
+            }
+            ClassExpression::OneOf(individuals) => {
+                // Individual is one of the enumerated individuals
+                Ok(individuals.contains(individual))
+            }
+            ClassExpression::SomeValuesFrom { property, class } => {
+                self.check_some_values_from(ontology, individual, property, class)
+            }
+            ClassExpression::AllValuesFrom { property, class } => {
+                self.check_all_values_from(ontology, individual, property, class)
+            }
+            ClassExpression::HasValue { property, individual: value } => {
+                self.check_has_value(ontology, individual, property, value)
+            }
+            ClassExpression::MinCardinality { cardinality, property, class } => {
+                self.check_min_cardinality(ontology, individual, property, *cardinality, class.as_ref().map(|c| &**c))
+            }
+            ClassExpression::MaxCardinality { cardinality, property, class } => {
+                self.check_max_cardinality(ontology, individual, property, *cardinality, class.as_ref().map(|c| &**c))
+            }
+            ClassExpression::ExactCardinality { cardinality, property, class } => {
+                self.check_exact_cardinality(ontology, individual, property, *cardinality, class.as_ref().map(|c| &**c))
+            }
         }
+    }
+
+    /// Check if individual is a member of a named class (including subclasses)
+    fn check_named_class_membership(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, class_iri: &OwlIri) -> Result<bool, OwlDlError> {
+        let target_class = fukurow_lite::Class::Named(class_iri.clone());
+
+        // First check direct assertions
+        for axiom in &ontology.axioms {
+            if let Axiom::OwlLite(fukurow_lite::Axiom::ClassAssertion(class, ind)) = axiom {
+                if ind == individual && class == &target_class {
+                    return Ok(true);
+                }
+            }
+        }
+
+        // Check subclass relationships - if individual is instance of subclass, it's also instance of superclass
+        for axiom in &ontology.axioms {
+            if let Axiom::OwlLite(fukurow_lite::Axiom::SubClassOf(subclass, superclass)) = axiom {
+                if superclass == &target_class {
+                    if let fukurow_lite::Class::Named(subclass_iri) = subclass {
+                        let subclass_expr = ClassExpression::Named(subclass_iri.clone());
+                        if self.is_instance_of(ontology, individual, &subclass_expr)? {
+                            return Ok(true);
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(false)
+    }
+
+    /// Check ∃R.C restriction
+    fn check_some_values_from(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression, class: &ClassExpression) -> Result<bool, OwlDlError> {
+        // Find all property assertions from this individual
+        for axiom in &ontology.axioms {
+            match axiom {
+                Axiom::ObjectPropertyAssertion(prop_expr, subject, object) => {
+                    if subject == individual && prop_expr == property {
+                        // Check if object is instance of the required class
+                        let object_individual = fukurow_lite::Individual(object.0.clone());
+                        if self.is_instance_of(ontology, &object_individual, class)? {
+                            return Ok(true);
+                        }
+                    }
+                }
+                Axiom::OwlLite(fukurow_lite::Axiom::ObjectPropertyAssertion(prop, subject, object)) => {
+                    if let fukurow_lite::Property::Object(iri) = prop {
+                        let prop_expr = PropertyExpression::ObjectProperty(iri.clone());
+                        if subject == individual && &prop_expr == property {
+                            // Check if object is instance of the required class
+                            let object_individual = fukurow_lite::Individual(object.0.clone());
+                            if self.is_instance_of(ontology, &object_individual, class)? {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(false)
+    }
+
+    /// Check ∀R.C restriction
+    fn check_all_values_from(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression, class: &ClassExpression) -> Result<bool, OwlDlError> {
+        // Find all property assertions from this individual
+        for axiom in &ontology.axioms {
+            match axiom {
+                Axiom::ObjectPropertyAssertion(prop_expr, subject, object) => {
+                    if subject == individual && prop_expr == property {
+                        // Check if ALL objects are instances of the required class
+                        let object_individual = fukurow_lite::Individual(object.0.clone());
+                        if !self.is_instance_of(ontology, &object_individual, class)? {
+                            return Ok(false);
+                        }
+                    }
+                }
+                Axiom::OwlLite(fukurow_lite::Axiom::ObjectPropertyAssertion(prop, subject, object)) => {
+                    if let fukurow_lite::Property::Object(iri) = prop {
+                        let prop_expr = PropertyExpression::ObjectProperty(iri.clone());
+                        if subject == individual && &prop_expr == property {
+                            // Check if ALL objects are instances of the required class
+                            let object_individual = fukurow_lite::Individual(object.0.clone());
+                            if !self.is_instance_of(ontology, &object_individual, class)? {
+                                return Ok(false);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(true)
+    }
+
+    /// Check ∃R.{i} restriction
+    fn check_has_value(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression, value: &fukurow_lite::Individual) -> Result<bool, OwlDlError> {
+        // Check if there's a property assertion with the specific value
+        for axiom in &ontology.axioms {
+            match axiom {
+                Axiom::ObjectPropertyAssertion(prop_expr, subject, object) => {
+                    if subject == individual && prop_expr == property && object == value {
+                        return Ok(true);
+                    }
+                }
+                Axiom::OwlLite(fukurow_lite::Axiom::ObjectPropertyAssertion(prop, subject, object)) => {
+                    if let fukurow_lite::Property::Object(iri) = prop {
+                        let prop_expr = PropertyExpression::ObjectProperty(iri.clone());
+                        if subject == individual && &prop_expr == property && object == value {
+                            return Ok(true);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(false)
+    }
+
+    /// Helper to collect property assertions for an individual and property
+    fn collect_property_assertions(&self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression) -> Vec<fukurow_lite::Individual> {
+        let mut objects = Vec::new();
+
+        for axiom in &ontology.axioms {
+            match axiom {
+                Axiom::ObjectPropertyAssertion(prop_expr, subject, object) => {
+                    if subject == individual && prop_expr == property {
+                        objects.push(fukurow_lite::Individual(object.0.clone()));
+                    }
+                }
+                Axiom::OwlLite(fukurow_lite::Axiom::ObjectPropertyAssertion(prop, subject, object)) => {
+                    if let fukurow_lite::Property::Object(iri) = prop {
+                        let prop_expr = PropertyExpression::ObjectProperty(iri.clone());
+                        if subject == individual && &prop_expr == property {
+                            objects.push(fukurow_lite::Individual(object.0.clone()));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        objects
+    }
+
+    /// Check ≥n R.C restriction
+    fn check_min_cardinality(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression, min_count: u32, class: Option<&ClassExpression>) -> Result<bool, OwlDlError> {
+        let objects = self.collect_property_assertions(ontology, individual, property);
+        let mut count = 0;
+
+        // Count property assertions that satisfy the class restriction
+        for object_individual in objects {
+            // If class is specified, check if object satisfies it
+            let satisfies_class = match class {
+                Some(required_class) => self.is_instance_of(ontology, &object_individual, required_class)?,
+                None => true, // No class restriction (owl:Thing)
+            };
+
+            if satisfies_class {
+                count += 1;
+            }
+        }
+
+        Ok(count >= min_count)
+    }
+
+    /// Check ≤n R.C restriction
+    fn check_max_cardinality(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression, max_count: u32, class: Option<&ClassExpression>) -> Result<bool, OwlDlError> {
+        let objects = self.collect_property_assertions(ontology, individual, property);
+        let mut count = 0;
+
+        // Count property assertions that satisfy the class restriction
+        for object_individual in objects {
+            // If class is specified, check if object satisfies it
+            let satisfies_class = match class {
+                Some(required_class) => self.is_instance_of(ontology, &object_individual, required_class)?,
+                None => true, // No class restriction (owl:Thing)
+            };
+
+            if satisfies_class {
+                count += 1;
+                if count > max_count {
+                    return Ok(false);
+                }
+            }
+        }
+
+        Ok(count <= max_count)
+    }
+
+    /// Check =n R.C restriction
+    fn check_exact_cardinality(&mut self, ontology: &OwlDlOntology, individual: &fukurow_lite::Individual, property: &PropertyExpression, exact_count: u32, class: Option<&ClassExpression>) -> Result<bool, OwlDlError> {
+        let min_result = self.check_min_cardinality(ontology, individual, property, exact_count, class)?;
+        let max_result = self.check_max_cardinality(ontology, individual, property, exact_count, class)?;
+
+        Ok(min_result && max_result)
     }
 
     /// Classify ontology (compute class hierarchy for complex expressions)

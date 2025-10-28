@@ -267,6 +267,46 @@ impl DefaultOwlDlOntologyLoader {
             ontology.add_property_expression(&inverse_inverse);
         }
 
+        // Process all triples to create axioms for non-OWL constructs
+        let rdf_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+        let owl_named_individual = "http://www.w3.org/2002/07/owl#NamedIndividual";
+        let owl_object_property = "http://www.w3.org/2002/07/owl#ObjectProperty";
+
+        for stored_triple in store.all_triples().values().flatten() {
+            let triple = &stored_triple.triple;
+
+            // Skip OWL constructs we've already processed
+            if triple.predicate.starts_with("http://www.w3.org/2002/07/owl#") {
+                continue;
+            }
+
+            // Class assertions (rdf:type)
+            if triple.predicate == rdf_type {
+                // Handle class assertions
+                if triple.object == owl_named_individual {
+                    // This is a named individual declaration - skip for now
+                    continue;
+                } else if triple.object == owl_object_property {
+                    // This is a property declaration - skip for now
+                    continue;
+                } else {
+                    // This is a class assertion - handle named classes only for now
+                    let class = fukurow_lite::Class::Named(OwlIri::new(triple.object.clone()));
+                    let individual = fukurow_lite::Individual(OwlIri::new(triple.subject.clone()));
+                    let axiom = Axiom::OwlLite(fukurow_lite::Axiom::ClassAssertion(class, individual));
+                    ontology.add_axiom(axiom);
+                }
+            } else {
+                // Object property assertions (assume object is another individual)
+                // Note: This is a simplified assumption - in full OWL DL we need to handle data properties too
+                let subject_individual = fukurow_lite::Individual(OwlIri::new(triple.subject.clone()));
+                let object_individual = fukurow_lite::Individual(OwlIri::new(triple.object.clone()));
+                let property_expr = PropertyExpression::ObjectProperty(OwlIri::new(triple.predicate.clone()));
+                let axiom = Axiom::ObjectPropertyAssertion(property_expr, subject_individual, object_individual);
+                ontology.add_axiom(axiom);
+            }
+        }
+
         Ok(())
     }
 
