@@ -61,6 +61,7 @@ pub struct AuditEntry {
 
 /// Types of audit operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub enum AuditOperation {
     /// Triple inserted
     Insert {

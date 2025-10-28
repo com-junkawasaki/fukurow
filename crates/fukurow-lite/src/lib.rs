@@ -15,6 +15,11 @@ pub use model::{Ontology, Class, Property, Individual, Axiom};
 pub use reasoner::OwlLiteReasoner;
 pub use loader::OntologyLoader;
 
+// Re-export store types for WASM integration
+pub use fukurow_store::store::RdfStore;
+pub use fukurow_store::provenance::{Provenance, GraphId};
+pub use fukurow_core::model::Triple;
+
 // Error types
 use thiserror::Error;
 

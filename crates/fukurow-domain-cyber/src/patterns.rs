@@ -1,6 +1,6 @@
 //! Attack pattern definitions and matching
 
-use fukurow_core::model::{SecurityAction, CyberEvent};
+use fukurow_rules::{SecurityAction, CyberEvent};
 use std::collections::HashMap;
 
 /// Common attack patterns

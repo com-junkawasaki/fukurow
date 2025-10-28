@@ -10,7 +10,6 @@ keywords = ["rules", "validation", "shacl", "reasoning", "constraints"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
 fukurow-store = { path = "../fukurow-store" }
 serde.workspace = true
 serde_json.workspace = true
@@ -21,3 +20,4 @@ chrono.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+tokio.workspace = true

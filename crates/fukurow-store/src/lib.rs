@@ -3,7 +3,7 @@
 //! Provenance付きRDF Triple Store
 //! 観測事実・推論事実を格納し、監査・トレーサビリティを確保
 
-use fukurow_core::model::{Triple, JsonLdDocument};
+use fukurow_core::model::JsonLdDocument;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -12,6 +12,9 @@ pub mod provenance;
 
 pub use store::*;
 pub use provenance::*;
+
+// Re-export Triple from fukurow_core for external use
+pub use fukurow_core::model::Triple;
 
 #[cfg(test)]
 mod tests {
@@ -189,6 +192,12 @@ mod tests {
         assert_eq!(GraphId::Default, GraphId::Default);
         assert_eq!(GraphId::Named("test".to_string()), GraphId::Named("test".to_string()));
         assert_ne!(GraphId::Default, GraphId::Named("test".to_string()));
+    }
+
+    #[test]
+    fn test_graph_id_default() {
+        let default_graph = GraphId::default();
+        assert_eq!(default_graph, GraphId::Default);
     }
 
     #[test]
@@ -394,5 +403,37 @@ mod tests {
         let stats = store.statistics();
         assert_eq!(stats.total_triples, 1);
         assert_eq!(stats.graph_count, 1);
+    }
+
+    #[test]
+    fn test_get_audit_trail() {
+        let mut store = RdfStore::new();
+
+        store.insert(Triple { subject: "s".to_string(), predicate: "p".to_string(), object: "o".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        let audit_trail = store.get_audit_trail();
+        assert_eq!(audit_trail.len(), 1);
+        assert_eq!(audit_trail[0].operation, AuditOperation::Insert {
+            triple: "s p o".to_string(),
+            graph_id: GraphId::Default,
+            provenance: Provenance::Sensor { source: "test".to_string(), confidence: None }
+        });
+    }
+
+    #[test]
+    fn test_set_audit_limit_with_existing_entries() {
+        let mut store = RdfStore::new();
+
+        // Add entries beyond the limit
+        store.insert(Triple { subject: "s1".to_string(), predicate: "p1".to_string(), object: "o1".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s2".to_string(), predicate: "p2".to_string(), object: "o2".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+        store.insert(Triple { subject: "s3".to_string(), predicate: "p3".to_string(), object: "o3".to_string() }, GraphId::Default, Provenance::Sensor { source: "test".to_string(), confidence: None });
+
+        // Set limit to 2 (should remove oldest entry)
+        store.set_audit_limit(2);
+
+        assert_eq!(store.audit_trail().len(), 2);
+        // Should have the 2 most recent entries
+        assert_eq!(store.audit_trail().len(), 2);
     }
 }

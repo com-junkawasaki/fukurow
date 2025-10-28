@@ -10,11 +10,15 @@ pub mod dsl;
 pub use traits::*;
 pub use dsl::*;
 
+// Re-export types from fukurow-core for domain crates
+pub use fukurow_core::model::{CyberEvent, SecurityAction, InferenceRule, Triple};
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use async_trait::async_trait;
     use fukurow_core::model::{Triple, SecurityAction};
+    use crate::traits::InferenceRule;
     use fukurow_store::store::RdfStore;
     use std::collections::HashMap;
 

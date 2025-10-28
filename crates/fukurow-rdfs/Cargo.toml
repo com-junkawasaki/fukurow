@@ -9,7 +9,7 @@ keywords = ["rdfs", "rdf", "inference", "reasoning", "owl"]
 categories = ["algorithms", "database"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
+fukurow-core = "0.2.0"
 fukurow-store = { path = "../fukurow-store" }
 serde.workspace = true
 serde_json.workspace = true

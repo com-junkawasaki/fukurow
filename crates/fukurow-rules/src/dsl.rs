@@ -581,7 +581,7 @@ mod tests {
             predicate: "failed_login_count".to_string(),
             object: "10".to_string(),
         };
-        store.add_triple(triple).await.unwrap();
+        store.insert(triple, fukurow_store::GraphId::Default, fukurow_store::Provenance::Sensor { source: "test".to_string(), confidence: None });
 
         // DSLポリシーを作成
         let policy = SecurityPolicy {

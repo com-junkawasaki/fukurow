@@ -10,8 +10,7 @@ keywords = ["cyber-security", "threat-intelligence", "rules", "detection", "siem
 categories = ["algorithms", "api-bindings"]
 
 [dependencies]
-fukurow-core = "0.1.0"
-fukurow-rules = "0.1.0"
+fukurow-rules = { path = "../fukurow-rules" }
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true

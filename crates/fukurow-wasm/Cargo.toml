@@ -32,10 +32,7 @@ web-sys = { version = "0.3", optional = true, features = [] }
 js-sys = "0.3"
 console_error_panic_hook = "0.1.6"
 
-# Core RDF processing (minimal for WASM compatibility)
-fukurow-core = { path = "../fukurow-core" }
-fukurow-store = { path = "../fukurow-store" }
+# Integration crates (with their dependencies)
 fukurow-lite = { path = "../fukurow-lite", default-features = false }
-# Note: SPARQL and SHACL are disabled for WASM due to logos/mio dependencies
-# fukurow-sparql = { path = "../fukurow-sparql", default-features = false }
-# fukurow-shacl = { path = "../fukurow-shacl", default-features = false }
+fukurow-sparql = { path = "../fukurow-sparql", default-features = false }
+fukurow-shacl = { path = "../fukurow-shacl", default-features = false }

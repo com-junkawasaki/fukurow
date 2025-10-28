@@ -16,7 +16,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["gftdcojp"]
 license = "MIT OR Apache-2.0"
@@ -58,10 +58,10 @@ getrandom = { version = "0.3", features = ["js", "wasm_js"], default-features = 
 base64 = "0.22"
 
 # Internal crate dependencies
-fukurow-core = { path = "crates/fukurow-core", version = "0.1.0" }
-fukurow-store = { path = "crates/fukurow-store", version = "0.1.0" }
-fukurow-lite = { path = "crates/fukurow-lite", version = "0.1.0" }
-fukurow-dl = { path = "crates/fukurow-dl", version = "0.1.0" }
+fukurow-core = { path = "crates/fukurow-core", version = "0.2.0" }
+fukurow-store = { path = "crates/fukurow-store", version = "0.2.0" }
+fukurow-lite = { path = "crates/fukurow-lite", version = "0.2.0" }
+fukurow-dl = { path = "crates/fukurow-dl", version = "0.2.0" }
 
 # JSON-LD and RDF processing
 json-ld = "0.16"
