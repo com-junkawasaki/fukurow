@@ -2,10 +2,8 @@
 
 use fukurow_core::model::Triple;
 use crate::provenance::{Provenance, GraphId, AuditEntry, AuditOperation};
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use uuid::Uuid;
 
 /// Stored triple with metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -14,8 +12,8 @@ pub struct StoredTriple {
     pub graph_id: GraphId,
     /// The RDF triple
     pub triple: Triple,
-    /// When this triple was asserted
-    pub asserted_at: DateTime<Utc>,
+    /// When this triple was asserted (Unix timestamp in milliseconds)
+    pub asserted_at: u64,
     /// Provenance information
     pub provenance: Provenance,
 }
@@ -60,7 +58,10 @@ impl RdfStore {
         let stored = StoredTriple {
             graph_id: graph_id.clone(),
             triple: triple.clone(),
-            asserted_at: Utc::now(),
+            asserted_at: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
             provenance: provenance.clone(),
         };
 
@@ -81,8 +82,14 @@ impl RdfStore {
 
         // Audit trail with memory management
         self.add_audit_entry(AuditEntry {
-            id: Uuid::new_v4().to_string(),
-            timestamp: Utc::now(),
+            id: format!("audit-{}", std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
             operation: AuditOperation::Insert {
                 triple: format!("{} {} {}", triple.subject, triple.predicate, triple.object),
                 graph_id,
@@ -181,8 +188,14 @@ impl RdfStore {
 
         // Audit trail with memory management
         self.add_audit_entry(AuditEntry {
-            id: Uuid::new_v4().to_string(),
-            timestamp: Utc::now(),
+            id: format!("audit-{}", std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
             operation: AuditOperation::Clear {
                 graph_id: graph_id.clone(),
                 triple_count: count,
@@ -204,8 +217,14 @@ impl RdfStore {
 
         // Audit trail with memory management
         self.add_audit_entry(AuditEntry {
-            id: Uuid::new_v4().to_string(),
-            timestamp: Utc::now(),
+            id: format!("audit-{}", std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
             operation: AuditOperation::Clear {
                 graph_id: GraphId::Default,
                 triple_count: total_count,

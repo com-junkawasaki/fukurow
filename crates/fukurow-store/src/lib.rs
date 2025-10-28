@@ -6,10 +6,6 @@
 use fukurow_core::model::{Triple, JsonLdDocument};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-#[cfg(feature = "chrono")]
-use chrono::{DateTime, Utc};
-#[cfg(feature = "uuid")]
-use uuid::Uuid;
 
 pub mod store;
 pub mod provenance;

@@ -1,18 +1,21 @@
-# 🦉 Fukurow - OWL Reasoning Stack in Rust
+# 🦉 Fukurow - WebAssembly-Native OWL Reasoning Engine
 
 <p align="center">
   <img src="assets/026.png" alt="Fukurow Logo" width="200">
 </p>
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
+[![WebAssembly](https://img.shields.io/badge/WebAssembly-Compatible-green)](https://webassembly.org/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
 [![OWL Support](https://img.shields.io/badge/OWL-Support_60%25-yellow)](#owl-support)
 [![SPARQL](https://img.shields.io/badge/SPARQL-1.1-blue)](#sparql-support)
 [![SHACL](https://img.shields.io/badge/SHACL-Core-blue)](#shacl-support)
 
-**OWLプロジェクト**: JSON-LD / RDF / OWL / SPARQL / SHACL ベースの知識推論システム。
+**WebAssemblyネイティブOWLプロジェクト**: ブラウザ内完結の知識推論システム。
 
-目的: OWLの意味論をRustで実装し、サイバー防御のための高速推論エンジンと監査可能な知識ストアを提供。
+**基本コンセプト**: WebAssembly互換性を基本とし、RustのOWL意味論実装をブラウザ環境で直接実行可能な形で提供。JSON-LD / RDF / OWL / SPARQL / SHACL の完全スタックをWebAssemblyで実現。
+
+目的: OWLの意味論をWebAssemblyで実装し、サイバー防御のための高速推論エンジンと監査可能な知識ストアを提供。
 
 ## 📊 プロジェクト完成度評価 (OWLプロジェクト観点)
 

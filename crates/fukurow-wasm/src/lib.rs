@@ -5,9 +5,17 @@
 
 mod utils;
 
-use fukurow_core::model::Triple;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use web_sys::{console, CanvasRenderingContext2d, HtmlCanvasElement};
+
+/// RDF Triple representation
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Triple {
+    pub subject: String,
+    pub predicate: String,
+    pub object: String,
+}
 use std::collections::HashSet;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global

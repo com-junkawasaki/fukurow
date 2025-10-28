@@ -10,9 +10,6 @@ description = "Observability (health/metrics) abstractions and Axum routes"
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-tokio.workspace = true
-chrono = { version = "0.4", features = ["serde"] }
 axum = "0.7"
-async-trait.workspace = true
 
 

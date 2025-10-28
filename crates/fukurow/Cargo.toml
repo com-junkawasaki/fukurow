@@ -23,13 +23,11 @@ fukurow-domain-cyber = { path = "../fukurow-domain-cyber", optional = true }
 fukurow-api = { path = "../fukurow-api", optional = true }
 fukurow-cli = { path = "../fukurow-cli", optional = true }
 
-# Re-export commonly used external dependencies for convenience
+# Re-export commonly used external dependencies for convenience (WebAssembly compatible)
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-tokio.workspace = true
-chrono = { version = "0.4", features = ["serde"] }
 
 [features]
 default = ["full"]

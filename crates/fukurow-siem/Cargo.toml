@@ -6,7 +6,6 @@ license.workspace = true
 repository.workspace = true
 description = "SIEM integration for Fukurow (Splunk, ELK, Chronicle)"
 keywords = ["siem", "splunk", "elk", "security", "integration"]
-categories = ["api-bindings", "asynchronous"]
 
 [dependencies]
 fukurow-core = "0.1.0"
@@ -14,13 +13,9 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
-tokio.workspace = true
 reqwest.workspace = true
-chrono.workspace = true
 uuid.workspace = true
 base64.workspace = true
-async-trait.workspace = true
 
 [dev-dependencies]
-tokio.workspace = true
 mockito = "1.6"

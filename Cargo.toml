@@ -41,51 +41,27 @@ opt-level = 3
 # Note: WebAssembly support is configured per crate in their respective Cargo.toml files
 
 [workspace.dependencies]
-# Core dependencies shared across crates
+# Core dependencies shared across crates (WebAssembly compatible)
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
-tokio = { version = "1.0", features = ["full"] }
-futures = "0.3"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde", "js", "rng-rand"] }
 getrandom = { version = "0.3", features = ["js", "wasm_js"], default-features = false }
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 base64 = "0.22"
-fukurow-lite = { path = "crates/fukurow-lite", version = "0.1.0" }
-fukurow-core = { path = "crates/fukurow-core", version = "0.1.0" }
-fukurow-store = { path = "crates/fukurow-store", version = "0.1.0" }
-fukurow-dl = { path = "crates/fukurow-dl", version = "0.1.0" }
-fukurow-siem = { path = "crates/fukurow-siem", version = "0.1.0" }
 
 # JSON-LD and RDF processing
 json-ld = "0.16"
 sophia = { version = "0.8", features = ["jsonld", "xml"] }
 
-# Web framework
-axum = "0.7"
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
-
-# WebAssembly
-console_error_panic_hook = "0.1.6"
-
-# Logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# Testing
-proptest = "1.0"
-
-# Async traits
-async-trait = "0.1"
-
-# WebAssembly support
+# WebAssembly core dependencies
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = "0.3"
 js-sys = "0.3"
+console_error_panic_hook = "0.1.6"
+
+# Testing (WebAssembly compatible)
+proptest = "1.0"
 
 # SPARQL parsing and processing
 logos = "0.14"

@@ -1,8 +1,6 @@
 //! Provenance and audit trail management
 
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "chrono")]
-use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 /// Provenance information for stored triples
@@ -28,8 +26,8 @@ pub enum Provenance {
     Imported {
         /// Import source (URI, file path, etc.)
         source_uri: String,
-        /// Import timestamp
-        imported_at: DateTime<Utc>,
+        /// Import timestamp (Unix timestamp in milliseconds)
+        imported_at: u64,
     },
 }
 
@@ -51,8 +49,8 @@ pub enum GraphId {
 pub struct AuditEntry {
     /// Unique audit ID
     pub id: String,
-    /// Timestamp of the operation
-    pub timestamp: DateTime<Utc>,
+    /// When the operation occurred (Unix timestamp in milliseconds)
+    pub timestamp: u64,
     /// Operation type
     pub operation: AuditOperation,
     /// User/context that performed the operation

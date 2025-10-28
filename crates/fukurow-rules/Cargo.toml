@@ -16,9 +16,6 @@ serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-async-trait = "0.1"
-chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
 proptest.workspace = true
-tokio.workspace = true
