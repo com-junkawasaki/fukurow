@@ -12,10 +12,10 @@ categories = ["wasm", "api-bindings"]
 crate-type = ["cdylib"]
 
 [dependencies]
-fukurow-core = { version = "0.1.0", default-features = false, features = ["wasm"] }
-fukurow-store = { version = "0.1.0", default-features = false, features = ["wasm"] }
-fukurow-lite = { version = "0.1.0", default-features = false, features = ["wasm"] }
-fukurow-dl = { version = "0.1.0", default-features = false, features = ["wasm"] }
+fukurow-core = { version = "0.1.0", default-features = false }
+fukurow-store = { version = "0.1.0", default-features = false }
+fukurow-lite = { version = "0.1.0", default-features = false }
+fukurow-dl = { version = "0.1.0", default-features = false }
 wasm-bindgen = { workspace = true, features = ["serde-serialize"] }
 web-sys = { workspace = true, features = [
   "console",
