@@ -11,7 +11,7 @@ categories = ["algorithms", "parsing"]
 [dependencies]
 fukurow-core = "0.1.0"
 fukurow-store = "0.1.0"
-fukurow-sparql = { path = "../fukurow-sparql" }
+fukurow-sparql = "0.1.0"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
