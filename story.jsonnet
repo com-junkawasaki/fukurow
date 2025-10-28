@@ -19,14 +19,14 @@
       cyber_defense: { completion: 70, status: "stable", note: "検出器実装済み" },
       siem_integration: { completion: 80, status: "stable", note: "Splunk・ELK・Chronicle対応完了" },
       api_cli: { completion: 70, status: "stable", note: "主要機能完備" },
-      operations: { completion: 100, status: "production", note: "CI/CD・監視・リリース自動化・SIEM統合・エンタープライズセキュリティ・Kubernetes・スケーリング・ストリーミング完了" },
+      operations: { completion: 100, status: "production", note: "CI/CD・監視・リリース自動化・SIEM統合・エンタープライズセキュリティ・Kubernetes・スケーリング・ストリーミング・crates.io公開完了" },
     },
     risks: [
       "SPARQL/SHACLのW3C準拠度（仕様解釈差）",
       "OWL推論の計算量・停止性・性能評価",
       "大規模グラフ時の結合順序・インデックス選択",
       "WASMビルド・ブラウザAPI制約",
-      "crates.io公開順序・依存整合性"
+      "運用規模でのパフォーマンス・スケーリング検証"
     ]
   },
 
@@ -510,6 +510,7 @@
         "observability_layer",
         "enterprise_phase",
         "production_phase",
+        "crates_io_publication",
       ],
       pending_nodes: [],
       blocked_nodes: [],
