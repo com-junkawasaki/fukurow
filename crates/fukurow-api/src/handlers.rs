@@ -9,7 +9,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use std::time::Instant;
 
-use crate::models::*;
+use crate::{models::*, monitoring::MonitoringService};
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 
@@ -18,6 +18,7 @@ use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
 pub struct AppState {
     pub reasoner: Arc<ReasonerEngine>,
     pub threat_processor: Arc<RwLock<ThreatProcessor>>,
+    pub monitoring: Arc<MonitoringService>,
     pub start_time: Instant,
 }
 

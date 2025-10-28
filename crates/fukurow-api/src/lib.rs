@@ -7,17 +7,18 @@ pub mod routes;
 pub mod handlers;
 pub mod models;
 pub mod server;
+pub mod monitoring;
 
 pub use routes::*;
 pub use handlers::*;
 pub use models::*;
 pub use server::*;
+pub use monitoring::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use fukurow_core::model::{CyberEvent, SecurityAction};
-    use chrono::Utc;
 
     #[cfg(test)]
     mod models_tests {
@@ -203,7 +204,6 @@ mod tests {
     #[cfg(test)]
     mod server_tests {
         use super::*;
-        use std::time::Duration;
 
         #[test]
         fn test_server_config_default() {
@@ -250,7 +250,7 @@ mod tests {
         #[test]
         fn test_reasoner_server_create_app() {
             let server = ReasonerServer::new();
-            let app = server.create_app();
+            let _app = server.create_app();
             // Router is created successfully
             assert!(true); // If we get here, app creation worked
         }
@@ -260,7 +260,7 @@ mod tests {
             // Test that shutdown_signal function can be created
             // Note: We can't actually test the signal handling without spawning a task
             // that would be interrupted, but we can test the function compiles and runs
-            let signal_future = shutdown_signal();
+            let _signal_future = shutdown_signal();
             // The future should be created without panicking
             assert!(true);
         }

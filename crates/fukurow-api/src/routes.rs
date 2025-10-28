@@ -5,10 +5,12 @@ use axum::{
     Router,
 };
 use tower_http::cors::CorsLayer;
-use crate::handlers::*;
+use crate::{handlers::*, monitoring::routes::monitoring_routes};
 
 /// Create the main API router
 pub fn create_router(state: AppState) -> Router {
+    let monitoring_router = monitoring_routes(state.monitoring.clone());
+
     Router::new()
         // Health and status routes
         .route("/health", get(health_check))
@@ -35,6 +37,8 @@ pub fn create_router(state: AppState) -> Router {
         // Apply middleware
         .layer(CorsLayer::permissive())
         .with_state(state)
+        // Add monitoring routes as nested router
+        .nest("/monitoring", monitoring_router)
 }
 
 /// API documentation routes (OpenAPI/Swagger)
