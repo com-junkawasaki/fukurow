@@ -2,10 +2,13 @@
 //!
 //! Rule traits and constraint validation (SHACL equivalent)
 //! Domain and policy rules for knowledge validation
+//! Declarative security policy DSL for rule definition
 
 pub mod traits;
+pub mod dsl;
 
 pub use traits::*;
+pub use dsl::*;
 
 #[cfg(test)]
 mod tests {

@@ -2,15 +2,18 @@
 //!
 //! JSON-LD Reasoner の Web API インターフェース
 //! RESTful API でサイバーセキュリティイベントの推論を提供
+//! エンタープライズSIEM統合機能（Splunk・ELK・Chronicle対応）
 
 pub mod routes;
 pub mod handlers;
 pub mod models;
 pub mod server;
+pub mod siem_integration;
 pub use routes::*;
 pub use handlers::*;
 pub use models::*;
 pub use server::*;
+pub use siem_integration::*;
 
 #[cfg(test)]
 mod tests {

@@ -10,10 +10,10 @@ keywords = ["api", "rest", "web", "http", "reasoning"]
 categories = ["web-programming", "api-bindings"]
 
 [dependencies]
-fukurow-core = "0.1.0"
-fukurow-store = "0.1.0"
-fukurow-engine = "0.1.0"
-fukurow-domain-cyber = "0.1.0"
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
+fukurow-engine = { path = "../fukurow-engine" }
+fukurow-domain-cyber = { path = "../fukurow-domain-cyber" }
 fukurow-observability = { path = "../fukurow-observability" }
 axum.workspace = true
 tower = { workspace = true, features = ["make"] }
@@ -28,6 +28,8 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.12", features = ["json"] }
+async-trait = "0.1"
 
 [dev-dependencies]
 proptest.workspace = true
