@@ -66,6 +66,8 @@
 		</div>
 
 		<script>
+			import init, { FukurowEngine } from '/wasm/fukurow_wasm.js';
+
 			let engine = null;
 			const output = document.getElementById('output');
 
@@ -79,51 +81,13 @@
 				try {
 					log('Loading WebAssembly module...');
 
-					// Note: This would normally load a compiled WebAssembly module
-					// For now, we'll simulate the functionality
+					// Initialize the WebAssembly module
+					await init();
+
 					log('WebAssembly module loaded successfully');
 
-					// Create a mock engine for testing
-					engine = {
-						addTriple: (s, p, o) => {
-							log(`Added triple: ${s} ${p} ${o}`);
-							return Promise.resolve();
-						},
-						getTripleCount: () => 3, // Mock count
-						clear: () => {
-							log('Knowledge base cleared');
-						},
-						renderGraph: (canvasId) => {
-							log(`Rendering graph to canvas: ${canvasId}`);
-							// Simple canvas drawing
-							const canvas = document.getElementById(canvasId);
-							const ctx = canvas.getContext('2d');
-
-							// Clear canvas
-							ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-							// Draw background
-							ctx.fillStyle = '#f0f0f0';
-							ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-							// Draw title
-							ctx.fillStyle = '#333';
-							ctx.font = '24px Arial';
-							ctx.fillText('Fukurow Knowledge Graph', 20, 40);
-
-							// Draw mock visualization
-							ctx.beginPath();
-							ctx.arc(400, 200, 50, 0, 2 * Math.PI);
-							ctx.fillStyle = '#4CAF50';
-							ctx.fill();
-
-							ctx.fillStyle = '#fff';
-							ctx.font = '14px Arial';
-							ctx.fillText('Mock KB', 380, 205);
-
-							return Promise.resolve();
-						}
-					};
+					// Create Fukurow engine instance
+					engine = new FukurowEngine();
 
 					log('Fukurow engine initialized');
 				} catch (error) {
