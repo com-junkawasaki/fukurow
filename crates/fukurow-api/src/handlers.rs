@@ -1,7 +1,7 @@
 //! API request handlers
 
 use axum::{
-    extract::{State, Json},
+    extract::{Extension, Json},
     http::StatusCode,
     response::Json as JsonResponse,
 };
@@ -24,7 +24,7 @@ pub struct AppState {
 }
 
 /// Health check handler
-pub async fn health_check(State(state): State<AppState>) -> JsonResponse<ApiResponse<HealthResponse>> {
+pub async fn health_check(Extension(state): Extension<Arc<AppState>>) -> JsonResponse<ApiResponse<HealthResponse>> {
     let uptime = state.start_time.elapsed();
 
     let response = HealthResponse {
@@ -38,7 +38,7 @@ pub async fn health_check(State(state): State<AppState>) -> JsonResponse<ApiResp
 
 /// Submit cyber event handler
 pub async fn submit_event(
-    State(state): State<AppState>,
+    Extension(state): Extension<Arc<AppState>>,
     Json(request): Json<SubmitEventRequest>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     match state.reasoner.add_event(request.event).await {
@@ -55,7 +55,7 @@ pub async fn submit_event(
 
 /// Execute reasoning handler
 pub async fn execute_reasoning(
-    State(state): State<AppState>,
+    Extension(state): Extension<Arc<AppState>>,
     Json(_request): Json<ReasoningRequest>,
 ) -> Result<JsonResponse<ApiResponse<ReasoningResponse>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     let start = Instant::now();
@@ -81,7 +81,7 @@ pub async fn execute_reasoning(
 
 /// Query graph handler
 pub async fn query_graph(
-    State(state): State<AppState>,
+    Extension(state): Extension<Arc<AppState>>,
     Json(request): Json<GraphQueryRequest>,
 ) -> Result<JsonResponse<ApiResponse<GraphQueryResponse>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     let store = state.reasoner.get_graph_store().await;
@@ -103,7 +103,7 @@ pub async fn query_graph(
 }
 
 /// Get statistics handler
-pub async fn get_stats(State(state): State<AppState>) -> JsonResponse<ApiResponse<StatsResponse>> {
+pub async fn get_stats(Extension(state): Extension<Arc<AppState>>) -> JsonResponse<ApiResponse<StatsResponse>> {
     let uptime = state.start_time.elapsed();
 
     // TODO: Get actual statistics from reasoner
@@ -119,7 +119,7 @@ pub async fn get_stats(State(state): State<AppState>) -> JsonResponse<ApiRespons
 
 /// Reset reasoner state handler
 pub async fn reset_reasoner(
-    State(_state): State<AppState>,
+    Extension(_state): Extension<Arc<AppState>>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     // TODO: Implement reset functionality - requires mutable access to reasoner
     let error_response = ApiResponse::error("Reset functionality not yet implemented".to_string());
@@ -128,7 +128,7 @@ pub async fn reset_reasoner(
 
 /// Add custom rule handler
 pub async fn add_rule(
-    State(_state): State<AppState>,
+    Extension(_state): Extension<Arc<AppState>>,
     Json(_request): Json<AddRuleRequest>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     // Note: This would require mutable access to reasoner, which needs design consideration
@@ -139,7 +139,7 @@ pub async fn add_rule(
 
 /// Get threat intelligence info handler
 pub async fn get_threat_intel(
-    State(state): State<AppState>,
+    Extension(state): Extension<Arc<AppState>>,
 ) -> JsonResponse<ApiResponse<ThreatIntelResponse>> {
     let threat_processor = state.threat_processor.read().await;
     let statistics = threat_processor.get_statistics();
@@ -156,7 +156,7 @@ pub async fn get_threat_intel(
 
 /// Export threat indicators handler
 pub async fn export_threat_indicators(
-    State(state): State<AppState>,
+    Extension(state): Extension<Arc<AppState>>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     let threat_processor = state.threat_processor.read().await;
 
@@ -173,7 +173,7 @@ pub async fn export_threat_indicators(
 
 /// Import threat indicators handler
 pub async fn import_threat_indicators(
-    State(state): State<AppState>,
+    Extension(state): Extension<Arc<AppState>>,
     Json(json_data): Json<String>,
 ) -> Result<JsonResponse<ApiResponse<String>>, (StatusCode, JsonResponse<ApiResponse<String>>)> {
     let mut threat_processor = state.threat_processor.write().await;
@@ -191,19 +191,19 @@ pub async fn import_threat_indicators(
 }
 
 /// Monitoring: overall health
-pub async fn monitoring_health(State(state): State<AppState>) -> JsonResponse<HealthStatus> {
+pub async fn monitoring_health(Extension(state): Extension<Arc<AppState>>) -> JsonResponse<HealthStatus> {
     let status = state.monitoring.get_overall_health().await;
     JsonResponse(status)
 }
 
 /// Monitoring: detailed checks
-pub async fn monitoring_health_detailed(State(state): State<AppState>) -> JsonResponse<Vec<HealthCheck>> {
+pub async fn monitoring_health_detailed(Extension(state): Extension<Arc<AppState>>) -> JsonResponse<Vec<HealthCheck>> {
     let checks = state.monitoring.run_health_checks().await;
     JsonResponse(checks)
 }
 
 /// Monitoring: system metrics
-pub async fn monitoring_metrics(State(state): State<AppState>) -> JsonResponse<SystemMetrics> {
+pub async fn monitoring_metrics(Extension(state): Extension<Arc<AppState>>) -> JsonResponse<SystemMetrics> {
     let metrics = state.monitoring.get_metrics().await;
     JsonResponse(metrics)
 }

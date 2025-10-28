@@ -1,7 +1,8 @@
 //! HTTP server implementation
 
-use axum::{serve, Router};
+use axum::Router;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Instant;
 use tokio::net::TcpListener;
 use tracing::{info, error};
@@ -67,8 +68,8 @@ impl ReasonerServer {
     }
 
     /// Create the application router
-    pub fn create_app(&self) -> Router<AppState> {
-        create_router(self.app_state.clone())
+    pub fn create_app(&self) -> Router {
+        create_router(Arc::new(self.app_state.clone()))
     }
 
     /// Start the server
@@ -81,12 +82,10 @@ impl ReasonerServer {
         let listener = TcpListener::bind(addr).await?;
         info!("Server listening on {}", addr);
 
-        serve(listener, app.into_make_service())
-            .await
-            .map_err(|e| {
-                error!("Server error: {}", e);
-                e.into()
-            })
+        axum::serve(listener, app).await.map_err(|e| {
+            error!("Server error: {}", e);
+            e.into()
+        })
     }
 
     /// Run the server with graceful shutdown
@@ -99,15 +98,13 @@ impl ReasonerServer {
         let listener = TcpListener::bind(addr).await?;
         info!("Server listening on {}", addr);
 
-        let server = serve(listener, app.into_make_service());
-        let graceful = server.with_graceful_shutdown(shutdown_signal);
-
-        // Note: Axum's WithGracefulShutdown doesn't implement Future directly
-        // This is a simplified version - in production, use proper graceful shutdown
-        graceful.await.map_err(|e| {
-            error!("Server error: {}", e);
-            e.into()
-        })
+        axum::serve(listener, app)
+            .with_graceful_shutdown(shutdown_signal)
+            .await
+            .map_err(|e| {
+                error!("Server error: {}", e);
+                e.into()
+            })
     }
 }
 
