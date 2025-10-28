@@ -9,8 +9,8 @@ pub mod consumer;
 pub mod producer;
 pub mod config;
 
-pub use stream::*;
-pub use processor::*;
+pub use stream::{StreamConfig, StreamType, AbstractStream, StreamMessage, StreamError};
+pub use processor::{StreamProcessor, EventStreamProcessor, EventSender, StreamConsumer, StreamProducer};
 pub use consumer::*;
 pub use producer::*;
 pub use config::*;

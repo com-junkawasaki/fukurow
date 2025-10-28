@@ -39,6 +39,63 @@ pub trait HealthMonitor: Send + Sync + 'static {
     async fn get_metrics(&self) -> SystemMetrics;
 }
 
+pub mod metrics {
+    /// Standard metric names for Fukurow components
+    pub mod names {
+        pub const REQUEST_TOTAL: &str = "fukurow_requests_total";
+        pub const REQUEST_DURATION: &str = "fukurow_request_duration_seconds";
+        pub const ACTIVE_CONNECTIONS: &str = "fukurow_active_connections";
+        pub const TRIPLE_COUNT: &str = "fukurow_triple_count";
+        pub const INFERENCE_TIME: &str = "fukurow_inference_duration_seconds";
+        pub const REASONING_ERRORS: &str = "fukurow_reasoning_errors_total";
+        pub const STREAM_EVENTS: &str = "fukurow_stream_events_total";
+        pub const OPERATOR_RECONCILES: &str = "fukurow_operator_reconciles_total";
+        pub const OPERATOR_RECONCILE_DURATION: &str = "fukurow_operator_reconcile_duration_seconds";
+    }
+
+    /// Standard labels for metrics
+    pub mod labels {
+        pub const SERVICE: &str = "service";
+        pub const COMPONENT: &str = "component";
+        pub const OPERATION: &str = "operation";
+        pub const STATUS: &str = "status";
+        pub const METHOD: &str = "method";
+        pub const ENDPOINT: &str = "endpoint";
+        pub const CLUSTER: &str = "cluster";
+        pub const NAMESPACE: &str = "namespace";
+        pub const EVENT_TYPE: &str = "event_type";
+        pub const STREAM_TYPE: &str = "stream_type";
+    }
+}
+
+pub mod tracing {
+    /// Standard span names for Fukurow operations
+    pub mod spans {
+        pub const API_REQUEST: &str = "api.request";
+        pub const REASONING_EXECUTE: &str = "reasoning.execute";
+        pub const STORE_QUERY: &str = "store.query";
+        pub const STREAM_SEND: &str = "stream.send";
+        pub const OPERATOR_RECONCILE: &str = "operator.reconcile";
+        pub const HEALTH_CHECK: &str = "health.check";
+    }
+
+    /// Standard span attributes
+    pub mod attributes {
+        pub const SERVICE_NAME: &str = "service.name";
+        pub const OPERATION: &str = "operation";
+        pub const COMPONENT: &str = "component";
+        pub const USER_ID: &str = "user.id";
+        pub const REQUEST_ID: &str = "request.id";
+        pub const CLUSTER_ID: &str = "cluster.id";
+        pub const NAMESPACE: &str = "namespace";
+        pub const ENDPOINT: &str = "endpoint";
+        pub const METHOD: &str = "method";
+        pub const STATUS_CODE: &str = "status.code";
+        pub const ERROR_TYPE: &str = "error.type";
+        pub const DURATION_MS: &str = "duration.ms";
+    }
+}
+
 pub mod routes {
     use super::*;
     use axum::{
@@ -77,6 +134,7 @@ pub mod routes {
         let s = m.get_metrics().await;
         Json(s)
     }
+
 }
 
 

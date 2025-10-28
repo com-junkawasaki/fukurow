@@ -15,8 +15,10 @@ members = [
     "crates/fukurow-domain-cyber",
     "crates/fukurow-observability",
     "crates/fukurow-api",
-    "crates/fukurow-cli"
-, "crates/fukurow-operator", "crates/crates/fukurow-streaming"]
+    "crates/fukurow-cli",
+    "crates/fukurow-operator",
+    "crates/fukurow-streaming"
+]
 resolver = "2"
 
 [workspace.package]

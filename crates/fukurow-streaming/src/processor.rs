@@ -2,7 +2,7 @@
 //!
 //! Core streaming processor for handling events
 
-use crate::{StreamingEvent, StreamingConfig};
+use crate::{StreamingEvent, StreamingConfig, StreamError};
 use async_trait::async_trait;
 use futures::stream::{Stream, StreamExt};
 use std::pin::Pin;
@@ -34,7 +34,7 @@ pub struct EventStreamProcessor<P: StreamProcessor> {
     event_rx: mpsc::UnboundedReceiver<StreamingEvent>,
 }
 
-impl<P: StreamProcessor> EventStreamProcessor<P> {
+impl<P: StreamProcessor + 'static> EventStreamProcessor<P> {
     /// Create a new event stream processor
     pub fn new(processor: P, config: StreamingConfig) -> Self {
         let (event_tx, event_rx) = mpsc::unbounded_channel();
@@ -193,30 +193,6 @@ pub trait StreamProducer: Send + Sync {
     async fn health_check(&self) -> Result<(), StreamError>;
 }
 
-/// Stream error
-#[derive(Debug, thiserror::Error)]
-pub enum StreamError {
-    #[error("Channel closed")]
-    ChannelClosed,
-
-    #[error("Processing timeout")]
-    ProcessingTimeout,
-
-    #[error("Connection error: {0}")]
-    ConnectionError(String),
-
-    #[error("Serialization error: {0}")]
-    SerializationError(String),
-
-    #[error("Configuration error: {0}")]
-    ConfigError(String),
-
-    #[error("Processor error: {0}")]
-    ProcessorError(String),
-
-    #[error("Health check failed: {0}")]
-    HealthCheckError(String),
-}
 
 #[cfg(test)]
 mod tests {

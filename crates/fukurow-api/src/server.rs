@@ -37,6 +37,8 @@ impl Default for ServerConfig {
 pub struct ReasonerServer {
     config: ServerConfig,
     app_state: AppState,
+    #[cfg(feature = "streaming")]
+    event_sender: Option<EventSender>,
 }
 
 impl ReasonerServer {
@@ -58,9 +60,23 @@ impl ReasonerServer {
             threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
             monitoring,
             start_time: Instant::now(),
+            #[cfg(feature = "streaming")]
+            event_sender: None,
         };
 
-        Self { config, app_state }
+        Self {
+            config,
+            app_state,
+            #[cfg(feature = "streaming")]
+            event_sender: None,
+        }
+    }
+
+    /// Set event sender for streaming events
+    #[cfg(feature = "streaming")]
+    pub fn set_event_sender(&mut self, sender: EventSender) {
+        self.event_sender = Some(sender.clone());
+        self.app_state.event_sender = Some(sender);
     }
 
     /// Get the server address
@@ -117,14 +133,21 @@ impl ReasonerServer {
 pub fn create_server_with_reasoner(reasoner: ReasonerEngine, config: ServerConfig, monitoring: std::sync::Arc<dyn HealthMonitor>) -> ReasonerServer {
     let threat_processor = ThreatProcessor::new();
 
-    let app_state = AppState {
-        reasoner: std::sync::Arc::new(reasoner),
-        threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
-        monitoring,
-        start_time: Instant::now(),
-    };
+        let app_state = AppState {
+            reasoner: std::sync::Arc::new(reasoner),
+            threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
+            monitoring,
+            start_time: Instant::now(),
+            #[cfg(feature = "streaming")]
+            event_sender: None,
+        };
 
-    ReasonerServer { config, app_state }
+    ReasonerServer {
+        config,
+        app_state,
+        #[cfg(feature = "streaming")]
+        event_sender: None,
+    }
 }
 
 /// Utility function to create a shutdown signal
