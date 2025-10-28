@@ -484,6 +484,7 @@ impl SparqlParser for DefaultSparqlParser {
         // Simple line-based parsing for now
         let mut prefixes = HashMap::new();
         let mut variables = Vec::new();
+        let mut query_type = QueryType::Select;
         let mut in_where = false;
         let mut triples = Vec::new();
 
@@ -521,10 +522,14 @@ impl SparqlParser for DefaultSparqlParser {
                         }
                     }
                 }
-            } else if line.starts_with("WHERE") {
-                in_where = true;
-            } else if in_where && line.contains('.') {
+            } else if line.starts_with("ASK") {
+                // ASK query - no variables needed, just WHERE clause
+                query_type = QueryType::Ask;
+                in_where = true; // ASK is followed by WHERE clause directly
+            } else if in_where && line.trim().ends_with('.') {
                 // Parse triple pattern (very simple)
+                let line = line.trim();
+                let line = &line[..line.len()-1]; // Remove the trailing dot
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 3 {
                     let subject = if parts[0].starts_with('?') {
@@ -552,6 +557,14 @@ impl SparqlParser for DefaultSparqlParser {
                         Term::Variable(Variable(parts[2][1..].to_string()))
                     } else if parts[2].starts_with('<') {
                         Term::Iri(Iri(parts[2].trim_matches('<').trim_matches('>').to_string()))
+                    } else if parts[2].starts_with('"') && parts[2].ends_with('"') {
+                        // Simple string literal
+                        let value = parts[2].trim_matches('"').to_string();
+                        Term::Literal(Literal {
+                            value,
+                            datatype: None,
+                            language: None,
+                        })
                     } else if parts[2].contains(':') {
                         let colon_parts: Vec<&str> = parts[2].split(':').collect();
                         if colon_parts.len() == 2 {
@@ -572,8 +585,12 @@ impl SparqlParser for DefaultSparqlParser {
             }
         }
 
+        println!("DEBUG: Parsed query type: {:?}", query_type);
+        println!("DEBUG: Parsed variables: {:?}", variables);
+        println!("DEBUG: Parsed triples: {:?}", triples);
+
         Ok(SparqlQuery {
-            query_type: QueryType::Select,
+            query_type,
             variables,
             dataset: vec![],
             where_clause: GraphPattern::Bgp(triples),

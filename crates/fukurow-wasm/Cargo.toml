@@ -31,3 +31,7 @@ wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 web-sys = { version = "0.3", optional = true, features = [] }
 js-sys = "0.3"
 console_error_panic_hook = "0.1.6"
+
+# Core RDF processing (minimal for WASM compatibility)
+# Note: Integration crates are not included due to tokio/async dependencies
+# TODO: Implement minimal reasoning engines directly in WASM

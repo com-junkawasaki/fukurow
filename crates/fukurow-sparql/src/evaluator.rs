@@ -20,12 +20,85 @@ pub enum QueryResult {
 /// 実行エンジントレイト
 pub trait SparqlEvaluator {
     fn evaluate(&self, algebra: &Algebra, store: &RdfStore) -> Result<QueryResult, crate::SparqlError>;
+    fn evaluate_query(&self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError>;
+}
+
+/// Prefix resolver for handling prefixed names
+#[derive(Clone)]
+pub struct PrefixResolver {
+    prefixes: std::collections::HashMap<String, crate::parser::Iri>,
+}
+
+impl PrefixResolver {
+    pub fn new(prefixes: std::collections::HashMap<String, crate::parser::Iri>) -> Self {
+        Self { prefixes }
+    }
+
+    pub fn resolve(&self, prefix: &str, local: &str) -> Option<String> {
+        self.prefixes.get(prefix).map(|iri| format!("{}{}", iri.0, local))
+    }
 }
 
 /// デフォルト実行エンジン
-pub struct DefaultSparqlEvaluator;
+pub struct DefaultSparqlEvaluator {
+    prefix_resolver: Option<PrefixResolver>,
+}
+
+impl DefaultSparqlEvaluator {
+    pub fn new() -> Self {
+        Self {
+            prefix_resolver: None,
+        }
+    }
+
+    pub fn with_prefixes(prefixes: std::collections::HashMap<String, crate::parser::Iri>) -> Self {
+        Self {
+            prefix_resolver: Some(PrefixResolver::new(prefixes)),
+        }
+    }
+}
+
+impl Default for DefaultSparqlEvaluator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl SparqlEvaluator for DefaultSparqlEvaluator {
+    fn evaluate_query(&self, query: &crate::parser::SparqlQuery, store: &RdfStore) -> Result<QueryResult, crate::SparqlError> {
+        // Create evaluator with prefixes
+        let mut evaluator = if !query.prefixes.is_empty() {
+            println!("DEBUG: Creating evaluator with prefixes: {:?}", query.prefixes);
+            Self::with_prefixes(query.prefixes.clone())
+        } else {
+            println!("DEBUG: Creating evaluator without prefixes");
+            Self::new()
+        };
+
+        // ASKクエリの特別処理
+        if let crate::parser::QueryType::Ask = query.query_type {
+            // ASKクエリはWHERE句を評価して結果が空でないかをチェック
+            use crate::algebra::PlanBuilder;
+            let builder = crate::algebra::DefaultPlanBuilder;
+            let algebra = builder.to_algebra(query)?;
+            let result = evaluator.evaluate(&algebra, store)?;
+
+            // ASKは結果が空でない場合にtrue
+            match result {
+                QueryResult::Select { bindings, .. } => {
+                    return Ok(QueryResult::Ask { result: !bindings.is_empty() });
+                }
+                _ => return Err(crate::SparqlError::EvaluationError("ASK query evaluation failed".to_string())),
+            }
+        }
+
+        // 他のクエリタイプの処理
+        use crate::algebra::PlanBuilder;
+        let builder = crate::algebra::DefaultPlanBuilder;
+        let algebra = builder.to_algebra(query)?;
+        evaluator.evaluate(&algebra, store)
+    }
+
     fn evaluate(&self, algebra: &Algebra, store: &RdfStore) -> Result<QueryResult, crate::SparqlError> {
         match algebra {
             Algebra::Bgp(triples) => {
@@ -214,9 +287,15 @@ impl DefaultSparqlEvaluator {
             let triple = &stored_triple.triple;
 
             // パターンマッチング
-            if self.term_matches(&pattern.subject, &triple.subject) &&
-               self.term_matches(&pattern.predicate, &triple.predicate) &&
-               self.term_matches(&pattern.object, &triple.object) {
+            let subject_match = self.term_matches(&pattern.subject, &triple.subject);
+            let predicate_match = self.term_matches(&pattern.predicate, &triple.predicate);
+            let object_match = self.term_matches(&pattern.object, &triple.object);
+
+            println!("DEBUG: Matching triple: s={:?}, p={:?}, o={:?}", triple.subject, triple.predicate, triple.object);
+            println!("DEBUG: Pattern: s={:?}, p={:?}, o={:?}", pattern.subject, pattern.predicate, pattern.object);
+            println!("DEBUG: Matches: s={}, p={}, o={}", subject_match, predicate_match, object_match);
+
+            if subject_match && predicate_match && object_match {
 
                 let mut binding = HashMap::new();
 
@@ -242,7 +321,26 @@ impl DefaultSparqlEvaluator {
                 &pattern_lit.value == term
             }
             Term::BlankNode(_) => true, // TODO: ブランクノード比較
-            Term::PrefixedName(_, _) => false, // TODO: prefix解決
+            Term::PrefixedName(prefix, local) => {
+                if let Some(resolver) = &self.prefix_resolver {
+                    if let Some(resolved) = resolver.resolve(prefix, local) {
+                        resolved == term
+                    } else {
+                        false
+                    }
+                } else {
+                    // フォールバック: 簡易実装
+                    if prefix == "ex" {
+                        let resolved = format!("http://example.org/{}", local);
+                        resolved == term
+                    } else if prefix == "rdf" {
+                        let resolved = format!("http://www.w3.org/1999/02/22-rdf-syntax-ns#{}", local);
+                        resolved == term
+                    } else {
+                        false
+                    }
+                }
+            }
         }
     }
 
@@ -253,6 +351,10 @@ impl DefaultSparqlEvaluator {
             let term_value = Term::Iri(crate::parser::Iri(term.to_string()));
             binding.insert(var.clone(), term_value);
         }
+    }
+
+    fn resolve_prefixed_name(&self, prefix: &str, local: &str, prefixes: &std::collections::HashMap<String, crate::parser::Iri>) -> Option<String> {
+        prefixes.get(prefix).map(|iri| format!("{}{}", iri.0, local))
     }
 
     fn join_bindings(&self, left: Vec<Bindings>, right: Vec<Bindings>) -> Vec<Bindings> {

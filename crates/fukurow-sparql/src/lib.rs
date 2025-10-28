@@ -18,6 +18,15 @@ pub use optimizer::{SparqlOptimizer, OptimizationRule};
 pub use evaluator::{SparqlEvaluator, QueryResult};
 pub use parser::Bindings;
 
+/// クエリ実行の簡易インターフェース
+pub fn execute_query(query: &str, store: &fukurow_store::store::RdfStore) -> Result<QueryResult, SparqlError> {
+    let parser = parser::DefaultSparqlParser;
+    let evaluator = evaluator::DefaultSparqlEvaluator::new();
+
+    let parsed = parser.parse(query)?;
+    evaluator.evaluate_query(&parsed, store)
+}
+
 // Error types
 use thiserror::Error;
 
@@ -152,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_evaluator_creation() {
-        let evaluator = evaluator::DefaultSparqlEvaluator;
+        let evaluator = evaluator::DefaultSparqlEvaluator::new();
         // Evaluator should exist
         assert!(true);
     }
@@ -185,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_evaluator_empty_bgp() {
-        let evaluator = evaluator::DefaultSparqlEvaluator;
+        let evaluator = evaluator::DefaultSparqlEvaluator::new();
         let store = RdfStore::new();
         let bgp = algebra::Algebra::Bgp(vec![]);
 
@@ -203,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_evaluator_simple_bgp() {
-        let evaluator = evaluator::DefaultSparqlEvaluator;
+        let evaluator = evaluator::DefaultSparqlEvaluator::new();
         let mut store = RdfStore::new();
 
         // Add a triple to the store
@@ -320,6 +329,62 @@ mod tests {
                 }
             }
             _ => panic!("Expected Project algebra"),
+        }
+    }
+
+    #[test]
+    fn test_sparql_ask_query() {
+        let mut store = RdfStore::new();
+
+        // Add test data
+        store.insert(Triple {
+            subject: "http://example.org/alice".to_string(),
+            predicate: "http://example.org/name".to_string(),
+            object: "\"Alice\"".to_string(),
+        }, default_graph_id(), sensor_provenance());
+
+        store.insert(Triple {
+            subject: "http://example.org/alice".to_string(),
+            predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+            object: "http://example.org/Person".to_string(),
+        }, default_graph_id(), sensor_provenance());
+
+        // ASK query that should return true
+        let query = r#"
+            PREFIX ex: <http://example.org/>
+            ASK {
+                ?person ex:name ?name .
+                ?person a ex:Person .
+            }
+        "#;
+
+        let result = execute_query(query, &store);
+        assert!(result.is_ok());
+
+        let unwrapped = result.unwrap();
+        println!("DEBUG: ASK query result: {:?}", unwrapped);
+        match unwrapped {
+            QueryResult::Ask { result } => {
+                println!("DEBUG: Expected true, got {}", result);
+                assert!(result)
+            },
+            _ => panic!("Expected Ask result, got {:?}", unwrapped),
+        }
+
+        // ASK query that should return false
+        let false_query = r#"
+            PREFIX ex: <http://example.org/>
+            ASK {
+                ?person ex:name "Bob" .
+            }
+        "#;
+
+        let false_result = execute_query(false_query, &store);
+        assert!(false_result.is_ok());
+
+        match false_result.unwrap() {
+            QueryResult::Ask { result } => assert!(!result),
+            _ => panic!("Expected Ask result"),
         }
     }
 
