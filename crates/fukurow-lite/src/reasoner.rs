@@ -115,6 +115,18 @@ impl OwlLiteReasoner {
             }
         }
 
+        // Generate ClassAssertion axioms from hierarchy and existing assertions
+        for axiom in &ontology.axioms {
+            if let Axiom::ClassAssertion(class, individual) = axiom {
+                // Add assertions for all superclasses
+                if let Some(superclasses) = hierarchy.get(class) {
+                    for superclass in superclasses {
+                        inferred.push(Axiom::ClassAssertion(superclass.clone(), individual.clone()));
+                    }
+                }
+            }
+        }
+
         // TODO: Add other inferred axioms (property hierarchies, etc.)
 
         Ok(inferred)

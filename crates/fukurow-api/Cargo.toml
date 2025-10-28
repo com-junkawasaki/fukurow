@@ -10,10 +10,10 @@ keywords = ["api", "rest", "web", "http", "reasoning"]
 categories = ["web-programming", "api-bindings"]
 
 [dependencies]
-fukurow-core = { path = "../fukurow-core" }
-fukurow-store = { path = "../fukurow-store" }
-fukurow-engine = { path = "../fukurow-engine" }
-fukurow-domain-cyber = { path = "../fukurow-domain-cyber" }
+fukurow-core = "0.2.0"
+fukurow-store = "0.2.0"
+fukurow-engine = "0.2.0"
+fukurow-domain-cyber = "0.2.0"
 fukurow-observability = { path = "../fukurow-observability" }
 fukurow-streaming = { path = "../fukurow-streaming" }
 serde.workspace = true
@@ -26,7 +26,7 @@ tokio.workspace = true
 tracing.workspace = true
 axum.workspace = true
 tower.workspace = true
-tower-http.workspace = true
+tower-http = { workspace = true, features = ["cors"] }
 hyper.workspace = true
 reqwest.workspace = true
 uuid.workspace = true

@@ -1,21 +1,21 @@
 [package]
 name = "fukurow-domain-cyber"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.2.0"
+edition = "2021"
+authors = ["gftdcojp"]
+license = "Apache-2.0"
+repository = "https://github.com/com-junkawasaki/fukurow"
 description = "Cyber security domain rules and threat intelligence for Fukurow reasoning engine"
 keywords = ["cyber-security", "threat-intelligence", "rules", "detection", "siem"]
 categories = ["algorithms", "api-bindings"]
 
 [dependencies]
-fukurow-rules = { path = "../fukurow-rules" }
-serde.workspace = true
-serde_json.workspace = true
-anyhow.workspace = true
-thiserror.workspace = true
+fukurow-rules = "0.2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
 regex = "1.10"
 
 [dev-dependencies]
-proptest.workspace = true
+proptest = "1.0"

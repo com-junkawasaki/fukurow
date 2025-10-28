@@ -234,7 +234,8 @@ mod tests {
                 max_connections: 50,
             };
 
-            let server = ReasonerServer::with_config(config);
+            let monitoring = std::sync::Arc::new(fukurow_observability::DefaultHealthMonitor::new());
+            let server = ReasonerServer::with_config(config, monitoring);
             let addr = server.address();
 
             assert_eq!(addr.to_string(), "127.0.0.1:8080");
@@ -242,14 +243,16 @@ mod tests {
 
         #[test]
         fn test_reasoner_server_new() {
-            let server = ReasonerServer::new();
+            let monitoring = std::sync::Arc::new(fukurow_observability::DefaultHealthMonitor::new());
+            let server = ReasonerServer::new(monitoring);
             let addr = server.address();
             assert_eq!(addr.to_string(), "0.0.0.0:3000");
         }
 
         #[test]
         fn test_reasoner_server_create_app() {
-            let server = ReasonerServer::new();
+            let monitoring = std::sync::Arc::new(fukurow_observability::DefaultHealthMonitor::new());
+            let server = ReasonerServer::new(monitoring);
             let _app = server.create_app();
             // Router is created successfully
             assert!(true); // If we get here, app creation worked
@@ -270,8 +273,9 @@ mod tests {
             // Test the utility function
             let reasoner = fukurow_engine::ReasonerEngine::new();
             let config = ServerConfig::default();
+            let monitoring = std::sync::Arc::new(fukurow_observability::DefaultHealthMonitor::new());
 
-            let server = create_server_with_reasoner(reasoner, config);
+            let server = create_server_with_reasoner(reasoner, config, monitoring);
             let addr = server.address();
 
             assert_eq!(addr.to_string(), "0.0.0.0:3000");

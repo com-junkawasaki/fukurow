@@ -6,7 +6,10 @@ members = [
     "crates/fukurow-dl",
     "crates/fukurow-sparql",
     "crates/fukurow-shacl",
+    "crates/fukurow-rdfs",
+    "crates/fukurow-rules",
     "crates/fukurow-engine",
+    "crates/fukurow-domain-cyber",
     "crates/fukurow-api",
     "crates/fukurow-observability",
     "crates/fukurow-streaming",
@@ -19,7 +22,7 @@ resolver = "2"
 version = "0.2.0"
 edition = "2021"
 authors = ["gftdcojp"]
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 repository = "https://github.com/com-junkawasaki/fukurow"
 
 [profile.release]
@@ -58,10 +61,10 @@ getrandom = { version = "0.3", features = ["js", "wasm_js"], default-features = 
 base64 = "0.22"
 
 # Internal crate dependencies
-fukurow-core = { path = "crates/fukurow-core", version = "0.2.0" }
-fukurow-store = { path = "crates/fukurow-store", version = "0.2.0" }
-fukurow-lite = { path = "crates/fukurow-lite", version = "0.2.0" }
-fukurow-dl = { path = "crates/fukurow-dl", version = "0.2.0" }
+fukurow-core = "0.2.0"
+fukurow-store = "0.2.0"
+fukurow-lite = "0.2.0"
+fukurow-dl = "0.2.0"
 
 # JSON-LD and RDF processing
 json-ld = "0.16"

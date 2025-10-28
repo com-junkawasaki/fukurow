@@ -1,29 +1,29 @@
 [package]
 name = "fukurow-engine"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.2.0"
+edition = "2021"
+authors = ["gftdcojp"]
+license = "Apache-2.0"
+repository = "https://github.com/com-junkawasaki/fukurow"
 description = "Reasoning engine orchestration that integrates reasoners and rules for Fukurow"
 keywords = ["reasoning", "inference", "engine", "orchestration", "knowledge-graph"]
 categories = ["algorithms", "concurrency"]
 
 [dependencies]
-fukurow-core = "0.2.0"
+fukurow-core = { path = "../fukurow-core" }
 fukurow-store = { path = "../fukurow-store" }
 fukurow-rules = { path = "../fukurow-rules" }
 fukurow-rdfs = { path = "../fukurow-rdfs" }
-serde.workspace = true
-serde_json.workspace = true
-anyhow.workspace = true
-thiserror.workspace = true
-async-trait.workspace = true
-chrono.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-futures.workspace = true
-uuid.workspace = true
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+futures = "0.3"
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
-proptest.workspace = true
+proptest = "1.0"

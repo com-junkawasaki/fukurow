@@ -1,24 +1,24 @@
 [package]
 name = "fukurow-rules"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.2.0"
+edition = "2021"
+authors = ["gftdcojp"]
+license = "Apache-2.0"
+repository = "https://github.com/com-junkawasaki/fukurow"
 description = "Rule traits and constraint validation (SHACL equivalent) for Fukurow reasoning"
 keywords = ["rules", "validation", "shacl", "reasoning", "constraints"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
-fukurow-core = "0.2.0"
+fukurow-core = { path = "../fukurow-core" }
 fukurow-store = { path = "../fukurow-store" }
-serde.workspace = true
-serde_json.workspace = true
-anyhow.workspace = true
-thiserror.workspace = true
-async-trait.workspace = true
-chrono.workspace = true
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
-proptest.workspace = true
-tokio.workspace = true
+proptest = "1.0"
+tokio = { version = "1.0", features = ["full"] }
