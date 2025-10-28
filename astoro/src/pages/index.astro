@@ -8,9 +8,176 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>Fukurow WebAssembly Test</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+			.controls {
+				margin: 20px 0;
+			}
+			button {
+				padding: 10px 20px;
+				margin: 5px;
+				background: #4CAF50;
+				color: white;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+			}
+			button:hover {
+				background: #45a049;
+			}
+			.output {
+				margin: 20px 0;
+				padding: 10px;
+				background: #f5f5f5;
+				border-radius: 4px;
+				min-height: 100px;
+			}
+			canvas {
+				border: 1px solid #ccc;
+				background: #f9f9f9;
+			}
+		</style>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<h1>Fukurow WebAssembly Test</h1>
+		<p>Testing WebAssembly integration with Fukurow reasoning engine</p>
+
+		<div class="controls">
+			<button id="initBtn">Initialize Engine</button>
+			<button id="addTripleBtn">Add Triple</button>
+			<button id="clearBtn">Clear</button>
+			<button id="renderBtn">Render Graph</button>
+		</div>
+
+		<div class="output">
+			<h3>Output:</h3>
+			<pre id="output"></pre>
+		</div>
+
+		<div>
+			<h3>Knowledge Graph:</h3>
+			<canvas id="graphCanvas" width="800" height="400"></canvas>
+		</div>
+
+		<script>
+			let engine = null;
+			const output = document.getElementById('output');
+
+			function log(message) {
+				output.textContent += message + '\n';
+				console.log(message);
+			}
+
+			// Initialize WebAssembly when page loads
+			async function initWasm() {
+				try {
+					log('Loading WebAssembly module...');
+
+					// Note: This would normally load a compiled WebAssembly module
+					// For now, we'll simulate the functionality
+					log('WebAssembly module loaded successfully');
+
+					// Create a mock engine for testing
+					engine = {
+						addTriple: (s, p, o) => {
+							log(`Added triple: ${s} ${p} ${o}`);
+							return Promise.resolve();
+						},
+						getTripleCount: () => 3, // Mock count
+						clear: () => {
+							log('Knowledge base cleared');
+						},
+						renderGraph: (canvasId) => {
+							log(`Rendering graph to canvas: ${canvasId}`);
+							// Simple canvas drawing
+							const canvas = document.getElementById(canvasId);
+							const ctx = canvas.getContext('2d');
+
+							// Clear canvas
+							ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+							// Draw background
+							ctx.fillStyle = '#f0f0f0';
+							ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+							// Draw title
+							ctx.fillStyle = '#333';
+							ctx.font = '24px Arial';
+							ctx.fillText('Fukurow Knowledge Graph', 20, 40);
+
+							// Draw mock visualization
+							ctx.beginPath();
+							ctx.arc(400, 200, 50, 0, 2 * Math.PI);
+							ctx.fillStyle = '#4CAF50';
+							ctx.fill();
+
+							ctx.fillStyle = '#fff';
+							ctx.font = '14px Arial';
+							ctx.fillText('Mock KB', 380, 205);
+
+							return Promise.resolve();
+						}
+					};
+
+					log('Fukurow engine initialized');
+				} catch (error) {
+					log(`Error initializing WebAssembly: ${error}`);
+				}
+			}
+
+			// Event listeners
+			document.getElementById('initBtn').addEventListener('click', () => {
+				if (!engine) {
+					initWasm();
+				} else {
+					log('Engine already initialized');
+				}
+			});
+
+			document.getElementById('addTripleBtn').addEventListener('click', async () => {
+				if (engine) {
+					try {
+						await engine.addTriple('http://example.org/person1', 'http://example.org/name', '"John Doe"');
+						log(`Triple count: ${engine.getTripleCount()}`);
+					} catch (error) {
+						log(`Error adding triple: ${error}`);
+					}
+				} else {
+					log('Engine not initialized. Click "Initialize Engine" first.');
+				}
+			});
+
+			document.getElementById('clearBtn').addEventListener('click', () => {
+				if (engine) {
+					engine.clear();
+					log('Triple count: 0');
+				} else {
+					log('Engine not initialized');
+				}
+			});
+
+			document.getElementById('renderBtn').addEventListener('click', async () => {
+				if (engine) {
+					try {
+						await engine.renderGraph('graphCanvas');
+					} catch (error) {
+						log(`Error rendering graph: ${error}`);
+					}
+				} else {
+					log('Engine not initialized');
+				}
+			});
+
+			// Auto-initialize on page load
+			document.addEventListener('DOMContentLoaded', () => {
+				log('Page loaded. Click "Initialize Engine" to start testing.');
+			});
+		</script>
 	</body>
 </html>

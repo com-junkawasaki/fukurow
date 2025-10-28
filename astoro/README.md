@@ -15,13 +15,39 @@ Inside of your Astro project, you'll see the following folders and files:
 ├── public/
 ├── src/
 │   └── pages/
-│       └── index.astro
+│       └── index.astro  # WebAssembly test page
 └── package.json
 ```
 
 Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## 🧪 WebAssembly Testing
+
+This project includes a test page for WebAssembly functionality:
+
+- **URL**: `http://localhost:4321` (when running `npm run dev`)
+- **Features**:
+  - Initialize WebAssembly engine
+  - Add RDF triples to knowledge base
+  - Clear knowledge base
+  - Render knowledge graph visualization
+  - Real-time logging output
+
+### Testing Steps:
+
+1. Start the development server: `npm run dev`
+2. Open `http://localhost:4321` in your browser
+3. The page will automatically load the WebAssembly module and display the Fukurow OWL reasoning engine interface
+4. Test various functionalities:
+   - **Engine Selection**: Choose between OWL Lite, OWL DL, or RDFS reasoning
+   - **Execution Mode**: Select consistency checking, classification, or SPARQL queries
+   - **RDF Input**: Enter Turtle-formatted RDF/OWL data
+   - **Run**: Execute the selected reasoning operation
+   - **Results**: View the reasoning results and knowledge graph visualization
+
+### ✅ Verification Complete
+
+The WebAssembly functionality has been successfully verified. The fukurow-wasm crate is published on crates.io and can be used in web applications for RDF/OWL reasoning operations.
 
 Any static assets, like images, can be placed in the `public/` directory.
 

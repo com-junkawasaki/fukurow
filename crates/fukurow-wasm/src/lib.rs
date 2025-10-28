@@ -6,11 +6,9 @@
 mod utils;
 
 use fukurow_core::model::Triple;
-use fukurow_store::store::RdfStore;
-use fukurow_lite::{OwlLiteReasoner, Ontology as OwlLiteOntology};
-use fukurow_dl::{OwlDlReasoner, OwlDlOntology};
 use wasm_bindgen::prelude::*;
 use web_sys::{console, CanvasRenderingContext2d, HtmlCanvasElement};
+use std::collections::HashSet;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -18,12 +16,11 @@ use web_sys::{console, CanvasRenderingContext2d, HtmlCanvasElement};
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-/// WebAssembly bindings for Fukurow reasoning engine
+/// Simplified WebAssembly bindings for Fukurow reasoning engine
+/// This version uses only fukurow-core for WebAssembly compatibility
 #[wasm_bindgen]
 pub struct FukurowEngine {
-    lite_reasoner: OwlLiteReasoner,
-    dl_reasoner: OwlDlReasoner,
-    store: RdfStore,
+    triples: Vec<Triple>,
 }
 
 #[wasm_bindgen]
@@ -35,32 +32,8 @@ impl FukurowEngine {
         utils::set_panic_hook();
 
         FukurowEngine {
-            lite_reasoner: OwlLiteReasoner::new(),
-            dl_reasoner: OwlDlReasoner::new(),
-            store: RdfStore::new(),
+            triples: Vec::new(),
         }
-    }
-
-    /// Load RDF data in Turtle format
-    #[wasm_bindgen]
-    pub fn load_turtle(&mut self, turtle_data: &str) -> Result<(), JsValue> {
-        // Parse Turtle format and add triples to store
-        // This is a simplified implementation
-        log(&format!("Loading Turtle data: {} bytes", turtle_data.len()));
-
-        // For now, just acknowledge the data
-        // TODO: Implement proper Turtle parsing
-        Ok(())
-    }
-
-    /// Load OWL ontology from JSON-LD
-    #[wasm_bindgen]
-    pub fn load_jsonld(&mut self, jsonld_data: &str) -> Result<(), JsValue> {
-        log(&format!("Loading JSON-LD data: {} bytes", jsonld_data.len()));
-
-        // Parse JSON-LD and convert to RDF triples
-        // TODO: Implement JSON-LD to RDF conversion
-        Ok(())
     }
 
     /// Add a single RDF triple
@@ -72,75 +45,21 @@ impl FukurowEngine {
             object: object.to_string(),
         };
 
-        self.store.insert(triple, fukurow_store::provenance::GraphId::Named("wasm".to_string()), fukurow_store::provenance::Provenance::Sensor {
-            source: "wasm".to_string(),
-            confidence: Some(1.0),
-        });
-
+        self.triples.push(triple);
         log(&format!("Added triple: {} {} {}", subject, predicate, object));
         Ok(())
-    }
-
-    /// Check if the current knowledge base is consistent (OWL Lite)
-    #[wasm_bindgen]
-    pub fn check_consistency_lite(&mut self) -> Result<bool, JsValue> {
-        log("Checking consistency with OWL Lite...");
-
-        match self.lite_reasoner.load_ontology(&self.store) {
-            Ok(ontology) => {
-                match self.lite_reasoner.is_consistent(&ontology) {
-                    Ok(is_consistent) => {
-                        log(&format!("OWL Lite consistency check: {}", is_consistent));
-                        Ok(is_consistent)
-                    }
-                    Err(e) => {
-                        log(&format!("OWL Lite consistency check failed: {:?}", e));
-                        Err(JsValue::from_str(&format!("Consistency check failed: {:?}", e)))
-                    }
-                }
-            }
-            Err(e) => {
-                log(&format!("Failed to load ontology: {:?}", e));
-                Err(JsValue::from_str(&format!("Failed to load ontology: {:?}", e)))
-            }
-        }
-    }
-
-    /// Check if the current knowledge base is consistent (OWL DL)
-    #[wasm_bindgen]
-    pub fn check_consistency_dl(&mut self) -> Result<bool, JsValue> {
-        log("Checking consistency with OWL DL...");
-
-        match self.dl_reasoner.load_ontology(&self.store) {
-            Ok(ontology) => {
-                match self.dl_reasoner.is_consistent(&ontology) {
-                    Ok(is_consistent) => {
-                        log(&format!("OWL DL consistency check: {}", is_consistent));
-                        Ok(is_consistent)
-                    }
-                    Err(e) => {
-                        log(&format!("OWL DL consistency check failed: {:?}", e));
-                        Err(JsValue::from_str(&format!("Consistency check failed: {:?}", e)))
-                    }
-                }
-            }
-            Err(e) => {
-                log(&format!("Failed to load ontology: {:?}", e));
-                Err(JsValue::from_str(&format!("Failed to load ontology: {:?}", e)))
-            }
-        }
     }
 
     /// Get the number of triples in the knowledge base
     #[wasm_bindgen]
     pub fn get_triple_count(&self) -> usize {
-        self.store.all_triples().values().map(|v| v.len()).sum()
+        self.triples.len()
     }
 
     /// Clear all data from the knowledge base
     #[wasm_bindgen]
     pub fn clear(&mut self) {
-        self.store.clear_all();
+        self.triples.clear();
         log("Knowledge base cleared");
     }
 
@@ -190,11 +109,11 @@ impl FukurowEngine {
         context.set_font("16px Arial");
         context.fill_text(&format!("Triples: {}", triple_count), 20.0, 70.0)?;
 
-        // Simple node visualization
+        // Simple visualization based on triple count
         if triple_count > 0 {
             let center_x = 400.0;
             let center_y = 300.0;
-            let radius = 100.0;
+            let radius = (triple_count as f64).min(100.0).max(20.0);
 
             // Draw central node
             context.begin_path();
@@ -205,7 +124,7 @@ impl FukurowEngine {
             // Draw node label
             context.set_font("14px Arial");
             context.set_fill_style(&JsValue::from_str("#fff"));
-            context.fill_text("Ontology", center_x - 30.0, center_y + 5.0)?;
+            context.fill_text("Knowledge Base", center_x - 50.0, center_y + 5.0)?;
         }
 
         Ok(())
