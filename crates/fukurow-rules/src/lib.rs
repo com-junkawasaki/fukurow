@@ -10,8 +10,9 @@ pub mod dsl;
 pub use traits::*;
 pub use dsl::*;
 
-// Re-export types from fukurow-core for domain crates
+// Re-export types from fukurow-core and fukurow-store for domain crates
 pub use fukurow_core::model::{CyberEvent, SecurityAction, InferenceRule, Triple};
+pub use fukurow_store::store::RdfStore;
 
 #[cfg(test)]
 mod tests {

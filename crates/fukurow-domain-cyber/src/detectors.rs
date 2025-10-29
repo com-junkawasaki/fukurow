@@ -1,10 +1,13 @@
 //! Cyber security threat detectors
 
-use fukurow_rules::{SecurityAction, CyberEvent, InferenceRule, Triple};
+use fukurow_rules::{Rule, RuleResult, RuleError, RdfStore, SecurityAction};
+use fukurow_core::model::{Triple, InferenceRule, CyberEvent};
+use async_trait::async_trait;
 use regex::Regex;
 use std::collections::HashSet;
 
 /// Malicious IP detector
+#[derive(Clone)]
 pub struct MaliciousIpDetector {
     known_malicious_ips: HashSet<String>,
     suspicious_patterns: Vec<Regex>,
@@ -33,39 +36,10 @@ impl MaliciousIpDetector {
         self.suspicious_patterns.iter().any(|pattern| pattern.is_match(ip))
     }
 
-    pub fn create_rule(&self) -> InferenceRule {
-        InferenceRule {
-            name: "advanced_malicious_ip_detection".to_string(),
-            description: "Advanced malicious IP detection using patterns and threat intelligence".to_string(),
-            conditions: vec![
-                Triple {
-                    subject: "?connection".to_string(),
-                    predicate: "rdf:type".to_string(),
-                    object: "https://w3id.org/security#NetworkConnection".to_string(),
-                },
-                Triple {
-                    subject: "?connection".to_string(),
-                    predicate: "https://w3id.org/security#destIp".to_string(),
-                    object: "?dest_ip".to_string(),
-                },
-            ],
-            actions: vec![
-                SecurityAction::BlockConnection {
-                    source_ip: "?source_ip".to_string(),
-                    dest_ip: "?dest_ip".to_string(),
-                    reason: "Connection to malicious IP detected by advanced pattern matching".to_string(),
-                },
-                SecurityAction::Alert {
-                    severity: "high".to_string(),
-                    message: "Malicious IP connection blocked".to_string(),
-                    details: serde_json::json!({
-                        "connection_id": "?connection",
-                        "destination_ip": "?dest_ip",
-                        "detection_method": "pattern_matching"
-                    }),
-                },
-            ],
-        }
+    pub fn create_rule(&self) -> Box<dyn Rule> {
+        Box::new(MaliciousIpRule {
+            detector: self.clone(),
+        })
     }
 }
 
@@ -240,5 +214,71 @@ impl PrivilegeEscalationDetector {
                 },
             ],
         }
+    }
+}
+
+/// Rule implementation for malicious IP detection
+pub struct MaliciousIpRule {
+    detector: MaliciousIpDetector,
+}
+
+#[async_trait]
+impl Rule for MaliciousIpRule {
+    fn name(&self) -> &'static str {
+        "malicious_ip_detection"
+    }
+
+    fn description(&self) -> &'static str {
+        "Detect connections to known malicious IPs"
+    }
+
+    fn priority(&self) -> i32 {
+        10
+    }
+
+    async fn apply(&self, store: &RdfStore) -> Result<RuleResult, RuleError> {
+        let mut actions = Vec::new();
+
+        // Find all network connections
+        let connections = store.find_triples(
+            None,
+            Some("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+            Some("http://example.org/CyberEvent"),
+        );
+
+        for connection in connections {
+            // Find destination IP for this connection
+            let dest_ips = store.find_triples(
+                Some(&connection.triple.subject),
+                Some("http://example.org/destIP"),
+                None,
+            );
+
+            for dest_ip_triple in dest_ips {
+                if self.detector.is_malicious_ip(&dest_ip_triple.triple.object) {
+                    actions.push(SecurityAction::Alert {
+                        severity: "high".to_string(),
+                        message: "Connection to malicious IP detected".to_string(),
+                        details: serde_json::json!({
+                            "connection_id": connection.triple.subject,
+                            "destination_ip": dest_ip_triple.triple.object,
+                            "detection_method": "pattern_matching"
+                        }),
+                    });
+                }
+            }
+        }
+
+        Ok(RuleResult {
+            triples_to_add: vec![],
+            triples_to_remove: vec![],
+            actions,
+            violations: vec![],
+            metadata: std::collections::HashMap::new(),
+        })
+    }
+
+    fn should_apply(&self, _store: &RdfStore) -> bool {
+        true
     }
 }

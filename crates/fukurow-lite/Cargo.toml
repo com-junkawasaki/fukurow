@@ -9,8 +9,8 @@ keywords = ["owl", "reasoning", "tableau", "ontology", "semantic-web"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
-fukurow-core = "0.2.0"
-fukurow-store = "0.2.0"
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

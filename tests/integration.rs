@@ -4,7 +4,8 @@
 use fukurow_core::model::{CyberEvent, SecurityAction};
 use fukurow_store::store::RdfStore;
 use fukurow_store::provenance::{Provenance, GraphId};
-use fukurow_engine::ReasonerEngine;
+use fukurow_engine::{ReasonerEngine, ReasoningEngine};
+use fukurow_domain_cyber::detectors::MaliciousIpDetector;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -13,7 +14,12 @@ async fn test_end_to_end_cyber_event_processing() {
     // Create RDF store
     let store = Arc::new(RwLock::new(RdfStore::new()));
 
-    // Create reasoner engine
+    // Create reasoning engine with malicious IP detector rule
+    let mut reasoning_engine = ReasoningEngine::new();
+    let detector = MaliciousIpDetector::new();
+    reasoning_engine.register_rule(detector.create_rule());
+
+    // Create reasoner engine (compatibility layer)
     let reasoner = ReasonerEngine::new();
 
     // Create a cyber event
@@ -25,6 +31,12 @@ async fn test_end_to_end_cyber_event_processing() {
         timestamp: chrono::Utc::now().timestamp(),
     };
 
+    // Extract dest_ip from event
+    let dest_ip = match &event {
+        CyberEvent::NetworkConnection { dest_ip, .. } => dest_ip.clone(),
+        _ => "unknown".to_string(),
+    };
+
     // Add event data to store and process
     let mut store_guard = store.write().await;
     // Convert event to triples and add to store
@@ -33,6 +45,11 @@ async fn test_end_to_end_cyber_event_processing() {
             subject: "http://example.org/event1".to_string(),
             predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
             object: "http://example.org/CyberEvent".to_string(),
+        },
+        fukurow_store::Triple {
+            subject: "http://example.org/event1".to_string(),
+            predicate: "http://example.org/destIP".to_string(),
+            object: dest_ip,
         },
     ];
     for triple in event_triples {
@@ -43,12 +60,12 @@ async fn test_end_to_end_cyber_event_processing() {
     }
     drop(store_guard);
 
-    // Process the store through the reasoner
+    // Process the store through the reasoning engine
     let store_guard = store.read().await;
-    let result = reasoner.process(&*store_guard).await.unwrap();
+    let result = reasoning_engine.process(&*store_guard).await.unwrap();
     let actions = result.actions;
 
-    // Verify that some actions were generated
+    // Verify that some actions were generated (malicious IP should trigger alert)
     assert!(!actions.is_empty(), "Event processing should generate actions");
 
     // Check that the store contains the event data
@@ -72,17 +89,17 @@ async fn test_reasoning_pipeline_integration() {
         };
 
         let triples = vec![
-            fukurow_core::model::Triple {
+            fukurow_store::Triple {
                 subject: "http://example.org/Person".to_string(),
                 predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
                 object: "http://www.w3.org/2002/07/owl#Class".to_string(),
             },
-            fukurow_core::model::Triple {
+            fukurow_store::Triple {
                 subject: "http://example.org/john".to_string(),
                 predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
                 object: "http://www.w3.org/2002/07/owl#NamedIndividual".to_string(),
             },
-            fukurow_core::model::Triple {
+            fukurow_store::Triple {
                 subject: "http://example.org/john".to_string(),
                 predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
                 object: "http://example.org/Person".to_string(),
@@ -117,7 +134,9 @@ async fn test_reasoning_pipeline_integration() {
 #[tokio::test]
 async fn test_multi_event_batch_processing() {
     let store = Arc::new(RwLock::new(RdfStore::new()));
-    let reasoner = ReasonerEngine::new();
+    let mut reasoning_engine = ReasoningEngine::new();
+    let detector = MaliciousIpDetector::new();
+    reasoning_engine.register_rule(detector.create_rule());
 
     // Create multiple events
     let events = vec![
@@ -147,24 +166,38 @@ async fn test_multi_event_batch_processing() {
     // Add events to store and process
     let mut store_guard = store.write().await;
     let mut event_count = 0;
-    for event in events {
-        let event_triple = fukurow_store::Triple {
-            subject: format!("http://example.org/event{}", event_count),
-            predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
-            object: "http://example.org/CyberEvent".to_string(),
+    for event in &events {
+        let subject = format!("http://example.org/event{}", event_count);
+        let dest_ip = match event {
+            CyberEvent::NetworkConnection { dest_ip, .. } => dest_ip.clone(),
+            _ => "unknown".to_string(),
         };
-        store_guard.insert(event_triple, fukurow_store::GraphId::Default, fukurow_store::Provenance::Sensor {
-            source: "test".to_string(),
-            confidence: None,
-        });
+        let event_triples = vec![
+            fukurow_store::Triple {
+                subject: subject.clone(),
+                predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
+                object: "http://example.org/CyberEvent".to_string(),
+            },
+            fukurow_store::Triple {
+                subject: subject.clone(),
+                predicate: "http://example.org/destIP".to_string(),
+                object: dest_ip,
+            },
+        ];
+        for triple in event_triples {
+            store_guard.insert(triple, fukurow_store::GraphId::Default, fukurow_store::Provenance::Sensor {
+                source: "test".to_string(),
+                confidence: None,
+            });
+        }
         event_count += 1;
     }
     drop(store_guard);
 
-    // Process the store
-    let store_guard = store.read().await;
-    let result = reasoner.process(&*store_guard).await.unwrap();
-    let total_actions = result.actions.len();
+           // Process the store
+           let store_guard = store.read().await;
+           let result = reasoning_engine.process(&*store_guard).await.unwrap();
+           let total_actions = result.actions.len();
 
     // Verify that some actions were generated
     assert!(total_actions > 0, "Batch event processing should generate actions");
@@ -190,17 +223,17 @@ async fn test_knowledge_graph_query_integration() {
         };
 
         let triples = vec![
-            fukurow_core::model::Triple {
+            fukurow_store::Triple {
                 subject: "http://example.org/alice".to_string(),
                 predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
                 object: "http://example.org/Person".to_string(),
             },
-            fukurow_core::model::Triple {
+            fukurow_store::Triple {
                 subject: "http://example.org/alice".to_string(),
                 predicate: "http://example.org/name".to_string(),
                 object: "Alice".to_string(),
             },
-            fukurow_core::model::Triple {
+            fukurow_store::Triple {
                 subject: "http://example.org/bob".to_string(),
                 predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
                 object: "http://example.org/Person".to_string(),
@@ -212,32 +245,28 @@ async fn test_knowledge_graph_query_integration() {
         }
     }
 
-    // Query for all persons
-    let query_result = reasoner.query_graph(
-        Some("http://example.org/Person".to_string()),
-        Some("http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string()),
+    // Query for all persons using store directly
+    let store_guard = store.read().await;
+    // Find all individuals that are instances of Person
+    let person_triples = store_guard.find_triples(
         None,
-    ).await;
+        Some("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+        Some("http://example.org/Person"),
+    );
 
-    match query_result {
-        Ok(triples) => {
-            assert!(triples.len() >= 2, "Should find at least 2 person instances");
-            // Verify the results contain expected subjects
-            let subjects: Vec<_> = triples.iter().map(|t| &t.subject).collect();
-            assert!(subjects.contains(&"http://example.org/alice".to_string()));
-            assert!(subjects.contains(&"http://example.org/bob".to_string()));
-        }
-        Err(e) => {
-            println!("Query error (expected for incomplete implementation): {:?}", e);
-            assert!(true, "Query interface was called successfully");
-        }
-    }
+    assert!(person_triples.len() >= 2, "Should find at least 2 person instances");
+    // Verify the results contain expected subjects
+    let subjects: Vec<_> = person_triples.iter().map(|t| &t.triple.subject).collect();
+    assert!(subjects.contains(&&"http://example.org/alice".to_string()));
+    assert!(subjects.contains(&&"http://example.org/bob".to_string()));
 }
 
 #[tokio::test]
 async fn test_error_handling_integration() {
     let store = Arc::new(RwLock::new(RdfStore::new()));
-    let reasoner = ReasonerEngine::new();
+    let mut reasoning_engine = ReasoningEngine::new();
+    let detector = MaliciousIpDetector::new();
+    reasoning_engine.register_rule(detector.create_rule());
 
     // Test with invalid event data in store
     let mut store_guard = store.write().await;
@@ -254,7 +283,7 @@ async fn test_error_handling_integration() {
 
     // The system should handle invalid data gracefully
     let store_guard = store.read().await;
-    let result = reasoner.process(&*store_guard).await;
+    let result = reasoning_engine.process(&*store_guard).await;
 
     // Either succeeds (with validation) or fails gracefully
     match result {
@@ -272,14 +301,17 @@ async fn test_error_handling_integration() {
 #[tokio::test]
 async fn test_concurrent_event_processing() {
     let store = Arc::new(RwLock::new(RdfStore::new()));
-    let reasoner = ReasonerEngine::new();
+    let mut reasoning_engine = ReasoningEngine::new();
+    let detector = MaliciousIpDetector::new();
+    reasoning_engine.register_rule(detector.create_rule());
+    let reasoning_engine = Arc::new(reasoning_engine);
 
     // Create multiple tasks processing events concurrently
     let mut handles = vec![];
 
     for i in 1..=5 {
         let store_clone = Arc::clone(&store);
-        let reasoner_clone = reasoner.clone();
+        let reasoning_engine_clone = Arc::clone(&reasoning_engine);
         let handle = tokio::spawn(async move {
             let mut store_guard = store_clone.write().await;
             let event_triple = fukurow_store::Triple {
@@ -293,8 +325,8 @@ async fn test_concurrent_event_processing() {
             });
             drop(store_guard);
 
-            let store_guard = store_clone.read().await;
-            reasoner_clone.process(&*store_guard).await
+                   let store_guard = store_clone.read().await;
+                   reasoning_engine_clone.process(&*store_guard).await
         });
         handles.push(handle);
     }
