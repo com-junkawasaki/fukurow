@@ -24,7 +24,7 @@ js-sys.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
-criterion = "0.5"
+criterion = "0.7"
 
 [[bench]]
 name = "core_benchmark"
