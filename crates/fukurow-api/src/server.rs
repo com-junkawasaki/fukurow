@@ -1,14 +1,19 @@
 //! HTTP server implementation
 
-use axum::{serve, Router};
+use axum::Router;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Instant;
 use tokio::net::TcpListener;
 use tracing::{info, error};
 
 use crate::{routes::create_router, handlers::AppState};
+use fukurow_observability::HealthMonitor;
 use fukurow_engine::ReasonerEngine;
 use fukurow_domain_cyber::threat_intelligence::ThreatProcessor;
+
+#[cfg(feature = "streaming")]
+use fukurow_streaming::processor::EventSender;
 
 /// Server configuration
 #[derive(Debug, Clone)]
@@ -32,16 +37,18 @@ impl Default for ServerConfig {
 pub struct ReasonerServer {
     config: ServerConfig,
     app_state: AppState,
+    #[cfg(feature = "streaming")]
+    event_sender: Option<EventSender>,
 }
 
 impl ReasonerServer {
     /// Create new server with default configuration
-    pub fn new() -> Self {
-        Self::with_config(ServerConfig::default())
+    pub fn new(monitoring: std::sync::Arc<dyn HealthMonitor>) -> Self {
+        Self::with_config(ServerConfig::default(), monitoring)
     }
 
     /// Create new server with custom configuration
-    pub fn with_config(config: ServerConfig) -> Self {
+    pub fn with_config(config: ServerConfig, monitoring: std::sync::Arc<dyn HealthMonitor>) -> Self {
         let reasoner = ReasonerEngine::new();
         let threat_processor = ThreatProcessor::new();
 
@@ -51,10 +58,25 @@ impl ReasonerServer {
         let app_state = AppState {
             reasoner: std::sync::Arc::new(reasoner),
             threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
+            monitoring,
             start_time: Instant::now(),
+            #[cfg(feature = "streaming")]
+            event_sender: None,
         };
 
-        Self { config, app_state }
+        Self {
+            config,
+            app_state,
+            #[cfg(feature = "streaming")]
+            event_sender: None,
+        }
+    }
+
+    /// Set event sender for streaming events
+    #[cfg(feature = "streaming")]
+    pub fn set_event_sender(&mut self, sender: EventSender) {
+        self.event_sender = Some(sender.clone());
+        self.app_state.event_sender = Some(sender);
     }
 
     /// Get the server address
@@ -66,7 +88,7 @@ impl ReasonerServer {
 
     /// Create the application router
     pub fn create_app(&self) -> Router {
-        create_router(self.app_state.clone())
+        create_router(Arc::new(self.app_state.clone()))
     }
 
     /// Start the server
@@ -79,12 +101,10 @@ impl ReasonerServer {
         let listener = TcpListener::bind(addr).await?;
         info!("Server listening on {}", addr);
 
-        serve(listener, app)
-            .await
-            .map_err(|e| {
-                error!("Server error: {}", e);
-                e.into()
-            })
+        axum::serve(listener, app).await.map_err(|e| {
+            error!("Server error: {}", e);
+            e.into()
+        })
     }
 
     /// Run the server with graceful shutdown
@@ -97,35 +117,37 @@ impl ReasonerServer {
         let listener = TcpListener::bind(addr).await?;
         info!("Server listening on {}", addr);
 
-        let server = serve(listener, app);
-        let graceful = server.with_graceful_shutdown(shutdown_signal);
-
-        // Note: Axum's WithGracefulShutdown doesn't implement Future directly
-        // This is a simplified version - in production, use proper graceful shutdown
-        graceful.await.map_err(|e| {
-            error!("Server error: {}", e);
-            e.into()
-        })
+        axum::serve(listener, app)
+            .with_graceful_shutdown(shutdown_signal)
+            .await
+            .map_err(|e| {
+                error!("Server error: {}", e);
+                e.into()
+            })
     }
 }
 
-impl Default for ReasonerServer {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// Default cannot be implemented without a default monitor
 
 /// Create a server with custom reasoner engine
-pub fn create_server_with_reasoner(reasoner: ReasonerEngine, config: ServerConfig) -> ReasonerServer {
+pub fn create_server_with_reasoner(reasoner: ReasonerEngine, config: ServerConfig, monitoring: std::sync::Arc<dyn HealthMonitor>) -> ReasonerServer {
     let threat_processor = ThreatProcessor::new();
 
-    let app_state = AppState {
-        reasoner: std::sync::Arc::new(reasoner),
-        threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
-        start_time: Instant::now(),
-    };
+        let app_state = AppState {
+            reasoner: std::sync::Arc::new(reasoner),
+            threat_processor: std::sync::Arc::new(tokio::sync::RwLock::new(threat_processor)),
+            monitoring,
+            start_time: Instant::now(),
+            #[cfg(feature = "streaming")]
+            event_sender: None,
+        };
 
-    ReasonerServer { config, app_state }
+    ReasonerServer {
+        config,
+        app_state,
+        #[cfg(feature = "streaming")]
+        event_sender: None,
+    }
 }
 
 /// Utility function to create a shutdown signal

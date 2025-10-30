@@ -3,12 +3,13 @@
 use axum::{
     routing::{get, post},
     Router,
+    extract::Extension,
 };
 use tower_http::cors::CorsLayer;
+use std::sync::Arc;
 use crate::handlers::*;
-
 /// Create the main API router
-pub fn create_router(state: AppState) -> Router {
+pub fn create_router(state: Arc<AppState>) -> Router {
     Router::new()
         // Health and status routes
         .route("/health", get(health_check))
@@ -32,9 +33,14 @@ pub fn create_router(state: AppState) -> Router {
         .route("/threat-intel/export", get(export_threat_indicators))
         .route("/threat-intel/import", post(import_threat_indicators))
 
+        // Monitoring routes (bound to AppState)
+        .route("/monitoring/health", get(monitoring_health))
+        .route("/monitoring/health/detailed", get(monitoring_health_detailed))
+        .route("/monitoring/metrics", get(monitoring_metrics))
+
         // Apply middleware
         .layer(CorsLayer::permissive())
-        .with_state(state)
+        .layer(Extension(state))
 }
 
 /// API documentation routes (OpenAPI/Swagger)

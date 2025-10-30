@@ -110,14 +110,14 @@ pub struct TripleTemplate {
 }
 
 /// Pattern value (variable or constant)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PatternValue {
     Variable(String),
     Constant(String),
 }
 
 /// Template value (variable reference or constant)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TemplateValue {
     Variable(String),
     Constant(String),
@@ -203,6 +203,26 @@ impl RuleRegistry {
         }
 
         Ok(all_violations)
+    }
+}
+
+impl RuleRegistry {
+    /// Get the number of registered rules (for testing)
+    #[cfg(test)]
+    pub fn rule_count(&self) -> usize {
+        self.rules.len()
+    }
+
+    /// Get the number of registered validation rules (for testing)
+    #[cfg(test)]
+    pub fn validation_rule_count(&self) -> usize {
+        self.validation_rules.len()
+    }
+
+    /// Get the number of registered inference rules (for testing)
+    #[cfg(test)]
+    pub fn inference_rule_count(&self) -> usize {
+        self.inference_rules.len()
     }
 }
 

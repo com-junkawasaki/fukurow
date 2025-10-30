@@ -1,0 +1,38 @@
+[package]
+name = "fukurow-wasm"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/com-junkawasaki/fukurow"
+description = "Headless WebAssembly bindings for Fukurow reasoning engine"
+keywords = ["wasm", "webassembly", "reasoning", "owl"]
+categories = ["wasm", "api-bindings"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["headless"]
+headless = []
+browser = ["web-sys"]
+
+[dependencies]
+# Core RDF processing (WebAssembly compatible)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+sophia = { version = "0.8", features = ["jsonld", "xml"] }
+json-ld = "0.16"
+iri-string = "0.7"
+lazy_static = "1.4"
+smallvec = "1.13"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+web-sys = { version = "0.3", optional = true, features = [] }
+js-sys = "0.3"
+console_error_panic_hook = "0.1.6"
+
+# Integration crates (with their dependencies)
+fukurow-lite = { path = "../fukurow-lite", default-features = false }
+fukurow-sparql = { path = "../fukurow-sparql", default-features = false }
+fukurow-shacl = { path = "../fukurow-shacl", default-features = false }

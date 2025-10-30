@@ -1,0 +1,19 @@
+[package]
+name = "fukurow-shacl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SHACL Core and SHACL-SPARQL validation for Fukurow"
+keywords = ["shacl", "rdf", "validation", "constraints", "shapes"]
+categories = ["algorithms", "parsing"]
+
+[dependencies]
+fukurow-core = "0.2.0"
+fukurow-store = "0.2.0"
+fukurow-sparql = "0.2.0"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+regex = "1.10"

@@ -10,15 +10,12 @@ keywords = ["rdf", "triple-store", "provenance", "audit", "knowledge-graph"]
 categories = ["database", "data-structures"]
 
 [dependencies]
-fukurow-core = "0.1.0"
+fukurow-core = "0.2.0"
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-tokio.workspace = true
-uuid = { version = "1.0", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
+wasm-bindgen.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
-tokio.workspace = true

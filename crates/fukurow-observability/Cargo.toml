@@ -1,0 +1,17 @@
+[package]
+name = "fukurow-observability"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Observability (health/metrics) abstractions and Axum routes"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+axum.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+
+

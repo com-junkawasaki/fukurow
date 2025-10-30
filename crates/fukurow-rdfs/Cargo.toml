@@ -1,0 +1,24 @@
+[package]
+name = "fukurow-rdfs"
+version = "0.2.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/com-junkawasaki/fukurow"
+description = "RDFS inference engine for Fukurow (subClassOf, subPropertyOf, domain, range)"
+keywords = ["rdfs", "rdf", "inference", "reasoning", "owl"]
+categories = ["algorithms", "database"]
+
+[dependencies]
+fukurow-core = { path = "../fukurow-core" }
+fukurow-store = { path = "../fukurow-store" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "rdfs_benchmark"
+harness = false

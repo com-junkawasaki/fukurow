@@ -1,9 +1,10 @@
 //! Tests for the rules-cyber crate
 
-use rules_cyber::detectors::{MaliciousIpDetector, LateralMovementDetector, PrivilegeEscalationDetector};
-use rules_cyber::patterns::{PatternDetector, AnomalyDetector};
-use rules_cyber::threat_intelligence::{ThreatProcessor, ThreatIndicator, IndicatorType, ThreatSource};
-use reasoner_graph::model::{CyberEvent, SecurityAction};
+use fukurow_domain_cyber::detectors::{MaliciousIpDetector, LateralMovementDetector, PrivilegeEscalationDetector};
+use fukurow_domain_cyber::patterns::{PatternDetector, AnomalyDetector};
+use fukurow_domain_cyber::threat_intelligence::{ThreatProcessor, ThreatIndicator, IndicatorType, ThreatSource};
+use fukurow_rules::CyberEvent;
+use fukurow_rules::SecurityAction;
 
 #[test]
 fn test_malicious_ip_detector() {

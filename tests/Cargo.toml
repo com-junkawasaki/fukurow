@@ -1,0 +1,21 @@
+[package]
+name = "fukurow-integration-tests"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Integration tests for Fukurow components"
+
+[lib]
+name = "fukurow_integration_tests"
+path = "integration.rs"
+
+[dependencies]
+fukurow-core = { path = "../crates/fukurow-core" }
+fukurow-store = { path = "../crates/fukurow-store" }
+fukurow-rules = { path = "../crates/fukurow-rules" }
+fukurow-engine = { path = "../crates/fukurow-engine" }
+fukurow-domain-cyber = { path = "../crates/fukurow-domain-cyber" }
+tokio.workspace = true
+chrono.workspace = true

@@ -1,0 +1,36 @@
+[package]
+name = "fukurow-streaming"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Real-time streaming processing for Fukurow reasoning engine"
+keywords = ["streaming", "kafka", "nats", "redis", "realtime"]
+
+[dependencies]
+fukurow-core = { path = "../fukurow-core" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+futures.workspace = true
+# Optional backends
+rdkafka = { version = "0.35", features = ["tokio"], optional = true }
+async-nats = { version = "0.33", optional = true }
+redis = { version = "0.24", features = ["tokio-comp"], optional = true }
+lapin = { version = "2.3", optional = true }
+
+[features]
+default = []
+kafka = ["dep:rdkafka"]
+nats = ["dep:async-nats"]
+redis = ["dep:redis"]
+rabbitmq = ["lapin"]
+
+[dev-dependencies]
+proptest.workspace = true
