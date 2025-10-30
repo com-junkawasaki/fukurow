@@ -49,7 +49,7 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 # Web framework dependencies (non-WASM)
 axum = "0.7"
 tower = "0.4"
-tower-http = "0.5"
+tower-http = "0.6"
 hyper = "1.0"
 reqwest = { version = "0.11", features = ["json"] }
 # Core dependencies shared across crates (WebAssembly compatible)
