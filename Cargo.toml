@@ -51,7 +51,7 @@ axum = "0.7"
 tower = "0.4"
 tower-http = "0.5"
 hyper = "1.0"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 # Core dependencies shared across crates (WebAssembly compatible)
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
