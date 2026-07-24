@@ -22,7 +22,7 @@ futures.workspace = true
 # Optional backends
 rdkafka = { version = "0.35", features = ["tokio"], optional = true }
 async-nats = { version = "0.33", optional = true }
-redis = { version = "0.24", features = ["tokio-comp"], optional = true }
+redis = { version = "0.32", features = ["tokio-comp"], optional = true }
 lapin = { version = "2.3", optional = true }
 
 [features]
