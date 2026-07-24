@@ -81,6 +81,6 @@ console_error_panic_hook = "0.1.6"
 proptest = "1.0"
 
 # SPARQL parsing and processing
-logos = "0.14"
+logos = "0.15"
 winnow = "0.6"
 itertools = "0.13"
