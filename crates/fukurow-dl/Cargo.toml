@@ -19,7 +19,7 @@ anyhow.workspace = true
 wasm-bindgen.workspace = true
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.7"
 
 [[bench]]
 name = "owl_dl_benchmark"
