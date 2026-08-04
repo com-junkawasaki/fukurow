@@ -83,4 +83,4 @@ proptest = "1.0"
 # SPARQL parsing and processing
 logos = "0.15"
 winnow = "1.0"
-itertools = "0.14"
+itertools = "0.15"
