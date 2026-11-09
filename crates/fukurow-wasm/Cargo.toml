@@ -23,7 +23,7 @@ serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
 sophia = { version = "0.10", features = ["jsonld", "xml"] }
-json-ld = "0.21"
+json-ld = "0.22"
 iri-string = "0.7"
 lazy_static = "1.4"
 smallvec = "1.13"

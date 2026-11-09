@@ -67,7 +67,7 @@ fukurow-lite = "0.2.0"
 fukurow-dl = "0.2.0"
 
 # JSON-LD and RDF processing
-json-ld = "0.21"
+json-ld = "0.22"
 sophia = { version = "0.10", features = ["jsonld", "xml"] }
 
 # WebAssembly core dependencies
